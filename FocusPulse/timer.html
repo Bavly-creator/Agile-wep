@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Focus Reactor - FocusPulse</title>
+  <!-- Anti-Flash Theme Script -->
+  <script>
+    (function() {
+      try {
+        const p = localStorage.getItem('focuspulse_preferences');
+        const theme = p ? JSON.parse(p).theme || 'dark' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/timer.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <!-- Deep Focus Exit Floating Button -->
+  <button id="btnExitDeepFocus" class="deep-focus-exit-btn">
+    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3"></path></svg>
+    <span>Exit Deep Focus (Esc)</span>
+  </button>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="brand-logo">
+          <div class="brand-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          </div>
+          <span>FocusPulse</span>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+        <a href="dashboard.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="timer.html" class="nav-link active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>Focus Reactor</span>
+          <span class="nav-badge">CORE</span>
+        </a>
+        <a href="pulse-ai.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6a6 6 0 0 0-6 6c0 2.2 1.2 4.1 3 5.2V16a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.2c1.8-1.1 3-3 3-5.2a6 6 0 0 0-6-6z"></path></svg>
+          <span>Pulse AI</span>
+          <span class="nav-badge" style="background: linear-gradient(135deg, var(--accent-violet) 0%, var(--accent-cyan) 100%);">NEW</span>
+        </a>
+        <a href="courses.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          <span>My Courses</span>
+        </a>
+        <a href="history.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 14 10"></polyline></svg>
+          <span>Study History</span>
+        </a>
+        <a href="streaks.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
+          <span>Study Streaks</span>
+        </a>
+
+        <div class="nav-section-label">Collaboration</div>
+        <a href="groups.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span>Study Groups</span>
+        </a>
+        <a href="challenges.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          <span>Challenges</span>
+        </a>
+
+        <div class="nav-section-label">Insights</div>
+        <a href="insights.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          <span>Statistics</span>
+        </a>
+        <a href="badges.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+          <span>Achievements</span>
+        </a>
+        <a href="distractions.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <span>Distractions</span>
+        </a>
+
+        <div class="nav-section-label">System</div>
+        <a href="settings.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="profile.html" class="user-snippet">
+          <div class="user-avatar">BR</div>
+          <div class="user-info">
+            <div class="user-name">Bavly Romany</div>
+            <div class="user-role">Student</div>
+          </div>
+        </a>
+        <button class="btn btn-ghost btn-logout" title="Log Out" style="padding: 0.4rem; color: var(--text-muted);">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navbar -->
+      <header class="top-navbar">
+        <div class="top-navbar-left">
+          <button class="sidebar-toggle-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div style="font-weight: 600; font-size: 1.05rem;">Focus Reactor Core</div>
+        </div>
+
+        <div class="top-navbar-right">
+          <div class="streak-pill-top">
+            <span>🔥</span>
+            <span id="topbarStreakCount">3d</span>
+          </div>
+
+          <button class="theme-toggle-btn" title="Toggle Theme">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Reactor Page Body -->
+      <div class="page-body">
+        <div class="reactor-page-container">
+
+          <!-- Top Reactor Configuration Bar -->
+          <div class="reactor-top-bar">
+            <div class="reactor-course-selector">
+              <label for="reactorCourseSelect" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">
+                Linked Course (S02):
+              </label>
+              <select id="reactorCourseSelect" class="reactor-course-select">
+                <!-- Populated dynamically -->
+              </select>
+            </div>
+
+            <div class="reactor-mode-tabs">
+              <button id="focusModeBtn" class="reactor-mode-btn active" data-mode="focus">Pomodoro (25m)</button>
+              <button id="breakModeBtn" class="reactor-mode-btn" data-mode="break">Break (5m)</button>
+            </div>
+          </div>
+
+          <!-- THE FOCUS REACTOR STAGE -->
+          <div id="reactorStage" class="reactor-stage state-idle">
+            <!-- Background Radiation Glow -->
+            <div class="reactor-radiation-glow"></div>
+
+            <!-- SVG Concentric Progress Ring & Gradients -->
+            <svg class="reactor-svg-rings" viewBox="0 0 440 440">
+              <defs>
+                <!-- Standard Focus Gradient (Violet to Cyan) -->
+                <linearGradient id="reactorProgressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#8b5cf6" />
+                  <stop offset="50%" stop-color="#a855f7" />
+                  <stop offset="100%" stop-color="#06b6d4" />
+                </linearGradient>
+
+                <!-- Final Minute Warm Golden Gradient -->
+                <linearGradient id="reactorGoldenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#f59e0b" />
+                  <stop offset="100%" stop-color="#fef08a" />
+                </linearGradient>
+
+                <!-- Recovery Break Gradient (Mint to Cyan) -->
+                <linearGradient id="reactorRecoveryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#10b981" />
+                  <stop offset="100%" stop-color="#06b6d4" />
+                </linearGradient>
+              </defs>
+
+              <!-- Track Ring -->
+              <circle class="ring-track" cx="220" cy="220" r="190" />
+
+              <!-- Animated Progress Ring -->
+              <circle id="reactorProgressRing" class="ring-progress" cx="220" cy="220" r="190" />
+            </svg>
+
+            <!-- Outer Dashed Orbital Ring -->
+            <div class="orbital-ring orbital-ring-outer"></div>
+
+            <!-- Mid Multi-colored Orbital Ring -->
+            <div class="orbital-ring orbital-ring-mid"></div>
+
+            <!-- Inner Dotted Orbital Ring -->
+            <div class="orbital-ring orbital-ring-inner"></div>
+
+            <!-- Central Breathing Energy Core -->
+            <div class="reactor-core">
+              <div class="reactor-pulse-disc"></div>
+
+              <div class="reactor-status-tag">
+                <span class="reactor-status-dot"></span>
+                <span id="reactorStatusText">REACTOR READY</span>
+              </div>
+
+              <!-- Main Countdown Display -->
+              <div id="reactorCountdown" class="reactor-countdown">25:00</div>
+
+              <div class="reactor-duration-control" aria-label="Timer duration controls">
+                <button id="btnDecreaseDuration" class="reactor-duration-btn" type="button" title="Decrease duration" aria-label="Decrease duration">−</button>
+                <span><strong id="reactorDurationValue">25</strong> min</span>
+                <button id="btnIncreaseDuration" class="reactor-duration-btn" type="button" title="Increase duration" aria-label="Increase duration">+</button>
+              </div>
+
+              <div id="reactorSessionLabel" class="reactor-session-label">
+                Agile Software Engineering
+              </div>
+            </div>
+          </div>
+
+          <!-- Reactor Controls Panel -->
+          <div class="reactor-controls">
+            <!-- Start Button -->
+            <button id="btnStartReactor" class="btn btn-reactor-start">
+              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>IGNITE REACTOR</span>
+            </button>
+
+            <!-- Pause Button -->
+            <button id="btnPauseReactor" class="btn btn-secondary btn-lg" style="display: none;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
+              <span>Pause</span>
+            </button>
+
+            <!-- Resume Button -->
+            <button id="btnResumeReactor" class="btn btn-cyan btn-lg" style="display: none;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+              <span>Resume</span>
+            </button>
+
+            <!-- Cancel Button (S04) -->
+            <button id="btnCancelReactor" class="btn btn-danger btn-lg" style="display: none;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              <span>Cancel Session</span>
+            </button>
+
+            <!-- Skip Break Button (S07) -->
+            <button id="btnSkipBreak" class="btn btn-secondary btn-lg" style="display: none;">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
+              <span>Skip Break</span>
+            </button>
+          </div>
+
+          <!-- Auxiliary Reactor Options -->
+          <div class="reactor-aux-controls">
+            <!-- Deep Focus Mode Toggle -->
+            <button id="btnToggleDeepFocus" class="btn btn-secondary btn-sm" title="Immersive Fullscreen">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+              <span>Deep Focus Mode</span>
+            </button>
+
+            <!-- Sound Toggle (Web Audio API) -->
+            <button id="btnToggleReactorSound" class="btn btn-secondary btn-sm active" title="Audio Chimes">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+              <span>Audio Chimes</span>
+            </button>
+
+            <!-- Distraction Quick Log (S19) -->
+            <button id="btnQuickDistraction" class="btn btn-secondary btn-sm" title="Log Distraction">
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+              <span>Log Distraction (S19)</span>
+            </button>
+          </div>
+
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- S04: Session Interruption Confirmation Modal -->
+  <div id="cancelConfirmModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title" style="color: var(--accent-rose); display: flex; align-items: center; gap: 0.5rem;">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"></polygon><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+          Abort Focus Session?
+        </h3>
+        <button class="modal-close-btn" onclick="Utils.closeModal('cancelConfirmModal')">✕</button>
+      </div>
+
+      <div style="font-size: 0.95rem; line-height: 1.6; color: var(--text-secondary);">
+        <p style="margin-bottom: 0.75rem;">
+          <strong>Agile Rule S04:</strong> An interrupted session does <em>not</em> count toward completed study time.
+        </p>
+        <p style="color: var(--text-muted); font-size: 0.88rem;">
+          Cancelling will log this session as interrupted (0 focus minutes credited), and it will not count towards your daily goal or streak.
+        </p>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="Utils.closeModal('cancelConfirmModal')">Keep Focusing</button>
+        <button id="btnConfirmCancelSession" class="btn btn-danger">Confirm Abort</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- S19: Quick Distraction Note Modal -->
+  <div id="quickDistractionModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <span>🧠</span> Log Distraction Note (S19)
+        </h3>
+        <button class="modal-close-btn" onclick="Utils.closeModal('quickDistractionModal')">✕</button>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="quickDistractionCategory">Distraction Source</label>
+        <select id="quickDistractionCategory" class="form-control">
+          <option value="Social Media">Social Media / Phone Notification</option>
+          <option value="Environment/Noise">Environment / Room Noise</option>
+          <option value="Daydreaming">Daydreaming / Mind Wandering</option>
+          <option value="Urgent Task">Unexpected Urge or Task</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label" for="quickDistractionText">What interrupted your focus?</label>
+        <textarea id="quickDistractionText" class="form-control" rows="3" placeholder="Brief note to clear your mind and refocus..."></textarea>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="Utils.closeModal('quickDistractionModal')">Cancel</button>
+        <button id="btnSaveQuickDistraction" class="btn btn-primary">Save & Refocus</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/courses.js"></script>
+  <script src="js/goals.js"></script>
+  <script src="js/streaks.js"></script>
+  <script src="js/history.js"></script>
+  <script src="js/groups.js"></script>
+  <script src="js/badges.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    Auth.requireAuth();
+
+    // Populate course select options (Only active unarchived courses)
+    const select = document.getElementById('reactorCourseSelect');
+    const courses = Courses.getAll(false); // false = unarchived only
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const preselectedCourseId = urlParams.get('course');
+
+    if (courses.length > 0) {
+      select.innerHTML = courses.map(c => `
+        <option value="${c.id}" ${c.id === preselectedCourseId ? 'selected' : ''}>
+          ${c.icon || '📚'} ${c.name} (${c.code})
+        </option>
+      `).join('');
+    } else {
+      select.innerHTML = `<option value="">No active courses (Add or restore in My Courses)</option>`;
+    }
+
+    Timer.init();
+  </script>
+</body>
+</html>

@@ -1,0 +1,10 @@
+.env
+node_modules/
+uploads/
+.DS_Store
+
+# Local-only project materials
+*.pdf
+*.xlsx
+WhatsApp Image *.jpeg
+

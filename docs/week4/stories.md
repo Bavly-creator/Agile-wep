@@ -36,7 +36,7 @@ Acceptance criteria:
 - The goal accepts only the supported unit and range defined by the product team.
 - The saved goal remains visible after refreshing the page.
 
-### S10 - Log out (2 points, reference story)
+### S10 - Log out (2 points, reference story, MVP)
 As a student, I want to log out so that nobody else can use my account on this device.
 
 Acceptance criteria:

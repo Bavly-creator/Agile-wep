@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - FocusPulse</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/responsive.css">
+</head>
+<body>
+
+  <div class="auth-wrapper">
+    <div class="auth-card">
+      <div class="auth-header">
+        <div class="auth-logo-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+        </div>
+        <h1 class="auth-title">Welcome Back</h1>
+        <p class="auth-subtitle">Log in to sync your study streaks and courses</p>
+      </div>
+
+      <!-- Demo Account Quick Sign-in Box -->
+      <div class="demo-account-box">
+        <div>
+          <div style="font-weight: 600; font-size: 0.85rem; color: var(--accent-violet-light);">Quick Demo Account</div>
+          <div style="font-size: 0.78rem; color: var(--text-muted);">bavly@focuspulse.io (Pre-seeded)</div>
+        </div>
+        <button type="button" id="btnQuickDemoLogin" class="btn btn-primary btn-sm">One-Click Demo</button>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label class="form-label" for="loginEmail">Email Address</label>
+          <input type="email" id="loginEmail" class="form-control" placeholder="student@university.edu" required autocomplete="email">
+        </div>
+
+        <div class="form-group">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label class="form-label" for="loginPassword" style="margin-bottom: 0;">Password</label>
+            <a href="reset-password.html" style="font-size: 0.78rem; color: var(--accent-violet-light);">Forgot password?</a>
+          </div>
+          <input type="password" id="loginPassword" class="form-control" placeholder="••••••••" required autocomplete="current-password">
+        </div>
+
+        <div id="loginErrorMsg" class="form-error"></div>
+
+        <button type="submit" class="btn btn-primary btn-full btn-lg" style="margin-top: 1.25rem;">
+          Sign In to FocusPulse
+        </button>
+      </form>
+
+      <div class="auth-footer-links">
+        Don't have an account? <a href="register.html">Create an Account</a>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    // Redirect if already logged in
+    Auth.redirectIfAuth();
+
+    // Form submit
+    const form = document.getElementById('loginForm');
+    const errorEl = document.getElementById('loginErrorMsg');
+
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+      errorEl.classList.remove('visible');
+
+      const email = document.getElementById('loginEmail').value;
+      const pass = document.getElementById('loginPassword').value;
+
+      const result = Auth.login(email, pass);
+      if (result.success) {
+        Utils.showToast('Login successful! Redirecting...', 'success');
+        setTimeout(() => {
+          window.location.href = 'dashboard.html';
+        }, 500);
+      } else {
+        errorEl.textContent = result.message;
+        errorEl.classList.add('visible');
+      }
+    });
+
+    // Quick demo login
+    document.getElementById('btnQuickDemoLogin').addEventListener('click', () => {
+      Auth.login('bavly@focuspulse.io', 'password123');
+      Utils.showToast('Logged in with Demo Account', 'success');
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 400);
+    });
+  </script>
+</body>
+</html>

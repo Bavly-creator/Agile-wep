@@ -1,0 +1,25 @@
+Summary,Issue Type,Description,Story point estimate,Parent,Labels,Priority
+E1 Account & Goals,Epic,Account and daily-goal capabilities,,,,
+E2 Pomodoro Timer,Epic,Focus-session timer capabilities,,,,
+E3 Focus Log & Streak,Epic,Focus logging and streak capabilities,,,,
+E4 Study Groups,Epic,Study-group capabilities,,,,
+E5 Insights & Motivation,Epic,Insights and motivation capabilities,,,,
+S01 Register and log in,Story,See stories.md for draft acceptance criteria,3,E1 Account & Goals,MVP,High
+S02 Add my courses,Story,See stories.md for draft acceptance criteria,2,E1 Account & Goals,MVP,High
+S03 Start focus session,Story,See stories.md for draft acceptance criteria,5,E2 Pomodoro Timer,MVP,Highest
+S04 Interrupted session does not count,Story,See stories.md for draft acceptance criteria,3,E2 Pomodoro Timer,MVP,High
+S05 Set daily goal,Story,See stories.md for draft acceptance criteria,2,E1 Account & Goals,MVP,High
+S06 See current streak,Story,See stories.md for draft acceptance criteria,5,E3 Focus Log & Streak,MVP,High
+S07 Automatic 5-min break,Story,See stories.md for draft acceptance criteria,3,E2 Pomodoro Timer,MVP,High
+S08 Daily log per course,Story,See stories.md for draft acceptance criteria,5,E3 Focus Log & Streak,MVP,High
+S09 Streak resets after missed day,Story,See stories.md for draft acceptance criteria,3,E3 Focus Log & Streak,MVP,High
+S10 Log out,Story,Reference story; see stories.md,2,E1 Account & Goals,MVP,Medium
+S11 Create study group,Story,See stories.md for draft acceptance criteria,5,E4 Study Groups,MVP,Medium
+S12 Join group with code,Story,See stories.md for draft acceptance criteria,3,E4 Study Groups,MVP,Medium
+S13 Group weekly total,Story,See stories.md for draft acceptance criteria,5,E4 Study Groups,MVP,Medium
+S14 Weekly group challenge,Story,See stories.md for draft acceptance criteria,5,E4 Study Groups,MVP,Medium
+S15 Reset password,Story,See stories.md for draft description,3,E1 Account & Goals,,Low
+S16 Time zone and midnight,Story,See stories.md for draft description,5,E1 Account & Goals,,Low
+S17 Weekly chart,Story,See stories.md for draft description,5,E3 Focus Log & Streak,,Low
+S18 Badges,Story,See stories.md for draft description,5,E5 Insights & Motivation,,Low
+S19 Distraction notes,Story,See stories.md for draft description,3,E3 Focus Log & Streak,,Low

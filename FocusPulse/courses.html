@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Courses - FocusPulse</title>
+  <!-- Anti-Flash Theme Script -->
+  <script>
+    (function() {
+      try {
+        const p = localStorage.getItem('focuspulse_preferences');
+        const theme = p ? JSON.parse(p).theme || 'dark' : 'dark';
+        document.documentElement.setAttribute('data-theme', theme);
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .courses-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      margin-bottom: 2rem;
+    }
+    .filter-tabs {
+      display: flex;
+      background: var(--bg-tertiary);
+      padding: 0.25rem;
+      border-radius: var(--radius-md);
+      gap: 0.25rem;
+    }
+    .filter-tab-btn {
+      padding: 0.45rem 1rem;
+      border-radius: var(--radius-sm);
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-secondary);
+      transition: all var(--transition-fast);
+    }
+    .filter-tab-btn.active {
+      background: var(--bg-card);
+      color: var(--accent-violet-light);
+      box-shadow: var(--shadow-sm);
+    }
+    .courses-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 1.5rem;
+    }
+    .course-card {
+      position: relative;
+      padding-top: 2rem;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .course-card-color-stripe {
+      height: 6px;
+      width: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+    }
+    .course-card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.75rem;
+    }
+    .course-icon-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .icon-selector-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0.5rem;
+      margin-top: 0.5rem;
+    }
+    .icon-choice-btn {
+      padding: 0.5rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      background: var(--bg-tertiary);
+      font-size: 1.3rem;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all var(--transition-fast);
+    }
+    .icon-choice-btn:hover {
+      border-color: var(--border-focus);
+    }
+    .icon-choice-btn.selected {
+      border-color: var(--accent-violet);
+      background: rgba(139, 92, 246, 0.2);
+      box-shadow: 0 0 10px var(--accent-violet-glow);
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar">
+      <div class="sidebar-header">
+        <a href="dashboard.html" class="brand-logo">
+          <div class="brand-icon-box">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+          </div>
+          <span>FocusPulse</span>
+        </a>
+      </div>
+
+      <nav class="sidebar-nav">
+        <div class="nav-section-label">Main</div>
+        <a href="dashboard.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+          <span>Dashboard</span>
+        </a>
+        <a href="timer.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+          <span>Focus Reactor</span>
+          <span class="nav-badge">CORE</span>
+        </a>
+        <a href="pulse-ai.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8z"></path><path d="M12 6a6 6 0 0 0-6 6c0 2.2 1.2 4.1 3 5.2V16a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1.2c1.8-1.1 3-3 3-5.2a6 6 0 0 0-6-6z"></path></svg>
+          <span>Pulse AI</span>
+          <span class="nav-badge" style="background: linear-gradient(135deg, var(--accent-violet) 0%, var(--accent-cyan) 100%);">NEW</span>
+        </a>
+        <a href="courses.html" class="nav-link active">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+          <span>My Courses</span>
+        </a>
+        <a href="history.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 14 10"></polyline></svg>
+          <span>Study History</span>
+        </a>
+        <a href="streaks.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"></path></svg>
+          <span>Study Streaks</span>
+        </a>
+
+        <div class="nav-section-label">Collaboration</div>
+        <a href="groups.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+          <span>Study Groups</span>
+        </a>
+        <a href="challenges.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+          <span>Challenges</span>
+        </a>
+
+        <div class="nav-section-label">Insights</div>
+        <a href="insights.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"></line><line x1="12" y1="20" x2="12" y2="4"></line><line x1="6" y1="20" x2="6" y2="14"></line></svg>
+          <span>Statistics</span>
+        </a>
+        <a href="badges.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>
+          <span>Achievements</span>
+        </a>
+        <a href="distractions.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <span>Distractions</span>
+        </a>
+
+        <div class="nav-section-label">System</div>
+        <a href="settings.html" class="nav-link">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Settings</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <a href="profile.html" class="user-snippet">
+          <div class="user-avatar">BR</div>
+          <div class="user-info">
+            <div class="user-name">Bavly Romany</div>
+            <div class="user-role">Student</div>
+          </div>
+        </a>
+        <button class="btn btn-ghost btn-logout" title="Log Out" style="padding: 0.4rem; color: var(--text-muted);">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Top Navbar -->
+      <header class="top-navbar">
+        <div class="top-navbar-left">
+          <button class="sidebar-toggle-btn">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+          </button>
+          <div style="font-weight: 600; font-size: 1.05rem;">My Courses (Complete Management)</div>
+        </div>
+
+        <div class="top-navbar-right">
+          <div class="streak-pill-top">
+            <span>🔥</span>
+            <span id="topbarStreakCount">3d</span>
+          </div>
+
+          <button class="theme-toggle-btn" title="Toggle Theme">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="5"></circle></svg>
+          </button>
+        </div>
+      </header>
+
+      <!-- Page Body -->
+      <div class="page-body">
+        <div class="page-header">
+          <div class="page-title-group">
+            <h1>Academic Courses</h1>
+            <p class="page-subtitle">Create, organize, archive, and link your university courses to the Focus Reactor.</p>
+          </div>
+          <button id="btnOpenAddCourseModal" class="btn btn-primary">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            Add New Course
+          </button>
+        </div>
+
+        <!-- Search & Filter Toolbar -->
+        <div class="courses-toolbar">
+          <div style="display: flex; gap: 0.75rem; flex: 1; max-width: 450px;">
+            <input type="text" id="courseSearchInput" class="form-control" placeholder="Search by title, code, or description...">
+          </div>
+
+          <div class="filter-tabs">
+            <button class="filter-tab-btn active" data-status="all">All</button>
+            <button class="filter-tab-btn" data-status="active">Active</button>
+            <button class="filter-tab-btn" data-status="archived">Archived</button>
+          </div>
+        </div>
+
+        <!-- Courses Grid -->
+        <div id="coursesListGrid" class="courses-grid"></div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Add Course Modal -->
+  <div id="addCourseModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <span>📚</span> Add New Course
+        </h3>
+        <button class="modal-close-btn" onclick="Utils.closeModal('addCourseModal')">✕</button>
+      </div>
+
+      <form id="addCourseForm">
+        <div class="form-group">
+          <label class="form-label" for="newCourseName">Course Title</label>
+          <input type="text" id="newCourseName" class="form-control" placeholder="e.g. Distributed Operating Systems" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="newCourseCode">Course Code</label>
+          <input type="text" id="newCourseCode" class="form-control" placeholder="e.g. CS 401" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="newCourseDesc">Description</label>
+          <textarea id="newCourseDesc" class="form-control" rows="2" placeholder="Course syllabus summary, objectives, or lecture room..."></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Course Icon</label>
+          <div id="addIconSelectorGrid" class="icon-selector-grid"></div>
+          <input type="hidden" id="newCourseIcon" value="📚">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="newCourseColor">Accent Color</label>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <input type="color" id="newCourseColor" value="#8b5cf6" style="border: none; background: none; width: 44px; height: 44px; cursor: pointer;">
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Choose a visual theme color for this course</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="newCourseTarget">Weekly Target (Minutes)</label>
+          <input type="number" id="newCourseTarget" class="form-control" value="300" min="60" step="30">
+        </div>
+
+        <div id="addCourseErrorMsg" class="form-error"></div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="Utils.closeModal('addCourseModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Course</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Edit Course Modal -->
+  <div id="editCourseModal" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h3 class="modal-title">
+          <span>✏️</span> Edit Course
+        </h3>
+        <button class="modal-close-btn" onclick="Utils.closeModal('editCourseModal')">✕</button>
+      </div>
+
+      <form id="editCourseForm">
+        <input type="hidden" id="editCourseId">
+
+        <div class="form-group">
+          <label class="form-label" for="editCourseName">Course Title</label>
+          <input type="text" id="editCourseName" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="editCourseCode">Course Code</label>
+          <input type="text" id="editCourseCode" class="form-control" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="editCourseDesc">Description</label>
+          <textarea id="editCourseDesc" class="form-control" rows="2"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Course Icon</label>
+          <div id="editIconSelectorGrid" class="icon-selector-grid"></div>
+          <input type="hidden" id="editCourseIcon" value="📚">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="editCourseColor">Accent Color</label>
+          <div style="display: flex; gap: 0.75rem; align-items: center;">
+            <input type="color" id="editCourseColor" style="border: none; background: none; width: 44px; height: 44px; cursor: pointer;">
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Update theme color</span>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="editCourseTarget">Weekly Target (Minutes)</label>
+          <input type="number" id="editCourseTarget" class="form-control" min="60" step="30">
+        </div>
+
+        <div id="editCourseErrorMsg" class="form-error"></div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn btn-secondary" onclick="Utils.closeModal('editCourseModal')">Cancel</button>
+          <button type="submit" class="btn btn-primary">Update Course</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/auth.js"></script>
+  <script src="js/courses.js"></script>
+  <script src="js/streaks.js"></script>
+  <script src="js/app.js"></script>
+  <script>
+    Auth.requireAuth();
+
+    let currentStatusFilter = 'all';
+
+    // Populate Icon Selector Grid
+    function renderIconGrids() {
+      const addGrid = document.getElementById('addIconSelectorGrid');
+      const editGrid = document.getElementById('editIconSelectorGrid');
+
+      addGrid.innerHTML = Courses.ICONS.map((icon, i) => `
+        <button type="button" class="icon-choice-btn ${i === 0 ? 'selected' : ''}" onclick="selectIcon('add', '${icon}', this)">
+          ${icon}
+        </button>
+      `).join('');
+
+      editGrid.innerHTML = Courses.ICONS.map(icon => `
+        <button type="button" class="icon-choice-btn" onclick="selectIcon('edit', '${icon}', this)">
+          ${icon}
+        </button>
+      `).join('');
+    }
+
+    window.selectIcon = function(formType, icon, btn) {
+      const input = document.getElementById(formType === 'add' ? 'newCourseIcon' : 'editCourseIcon');
+      const grid = document.getElementById(formType === 'add' ? 'addIconSelectorGrid' : 'editIconSelectorGrid');
+      input.value = icon;
+      grid.querySelectorAll('.icon-choice-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+    };
+
+    function renderCourses() {
+      const query = document.getElementById('courseSearchInput').value;
+      const courses = Courses.search(query, currentStatusFilter);
+      const container = document.getElementById('coursesListGrid');
+
+      if (courses.length === 0) {
+        container.innerHTML = `
+          <div class="card" style="grid-column: 1 / -1; text-align: center; padding: 3.5rem;">
+            <div style="font-size: 2.5rem; margin-bottom: 0.75rem;">📚</div>
+            <h3 style="margin-bottom: 0.5rem;">No Courses Found</h3>
+            <p class="text-muted" style="margin-bottom: 1.5rem;">
+              ${query ? 'No courses match your search criteria.' : 'You have no courses in this filter tab.'}
+            </p>
+            <button class="btn btn-primary" onclick="Utils.openModal('addCourseModal')">+ Create a Course</button>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = courses.map(c => {
+        const stats = Courses.getStats(c.id);
+        const isArchived = !!c.isArchived;
+
+        return `
+          <div class="card course-card ${isArchived ? 'style="opacity: 0.75;"' : ''}">
+            <div class="course-card-color-stripe" style="background-color: ${c.color}"></div>
+
+            <div>
+              <div class="course-card-header">
+                <div style="display: flex; align-items: center; gap: 0.85rem;">
+                  <div class="course-icon-badge" style="background-color: ${c.color}25; border: 1px solid ${c.color}45;">
+                    ${c.icon || '📚'}
+                  </div>
+                  <div>
+                    <div style="display: flex; align-items: center; gap: 0.5rem;">
+                      <span class="badge" style="background-color: ${c.color}20; color: ${c.color}; font-family: var(--font-mono);">${c.code}</span>
+                      ${isArchived ? '<span class="badge badge-amber">Archived</span>' : ''}
+                    </div>
+                    <h3 style="margin-top: 0.25rem; font-size: 1.15rem;">${c.name}</h3>
+                  </div>
+                </div>
+
+                <!-- Dropdown Actions -->
+                <div style="display: flex; gap: 0.35rem;">
+                  <button class="btn btn-ghost btn-sm" onclick="openEditModal('${c.id}')" title="Edit Course">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                  </button>
+                  <button class="btn btn-ghost btn-sm" onclick="toggleArchive('${c.id}', ${isArchived})" title="${isArchived ? 'Restore Course' : 'Archive Course'}">
+                    ${isArchived ? '♻️' : '📦'}
+                  </button>
+                  <button class="btn btn-ghost btn-sm" onclick="deleteCourse('${c.id}')" title="Delete Course" style="color: var(--accent-rose);">
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  </button>
+                </div>
+              </div>
+
+              ${c.description ? `<p class="text-secondary" style="font-size: 0.85rem; margin-bottom: 1rem; line-height: 1.4;">${c.description}</p>` : ''}
+
+              <!-- Weekly Progress -->
+              <div style="margin: 1.25rem 0;">
+                <div style="display: flex; justify-content: space-between; font-size: 0.82rem; margin-bottom: 0.4rem;">
+                  <span class="text-muted">Weekly Target Progress</span>
+                  <span style="font-weight: 600;">${Utils.formatMinutes(stats.weeklyMinutes)} / ${Utils.formatMinutes(stats.targetMinutes)} (${stats.progressPercent}%)</span>
+                </div>
+                <div class="progress-container">
+                  <div class="progress-fill" style="width: ${stats.progressPercent}%; background: ${c.color};"></div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Stats Footer & Reactor Action -->
+            <div style="border-top: 1px solid var(--border-subtle); padding-top: 0.85rem; display: flex; justify-content: space-between; align-items: center;">
+              <div style="font-size: 0.78rem; color: var(--text-muted);">
+                <span>Total: <strong>${Utils.formatMinutes(stats.totalMinutes)}</strong></span> • 
+                <span>Sessions: <strong>${stats.completedSessions}</strong></span>
+              </div>
+              <a href="timer.html?course=${c.id}" class="btn btn-secondary btn-sm" ${isArchived ? 'style="pointer-events: none; opacity: 0.5;"' : ''}>
+                Study with Reactor →
+              </a>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    // Toggle Archive / Restore
+    window.toggleArchive = function(id, isArchived) {
+      if (isArchived) {
+        Courses.restore(id);
+        Utils.showToast('Course restored to active list', 'success');
+      } else {
+        Courses.archive(id);
+        Utils.showToast('Course moved to archive', 'info');
+      }
+      renderCourses();
+    };
+
+    // Delete Course with Confirmation
+    window.deleteCourse = function(id) {
+      if (confirm('Permanently delete this course? Historical focus logs will remain saved in study history.')) {
+        Courses.delete(id);
+        Utils.showToast('Course deleted', 'info');
+        renderCourses();
+      }
+    };
+
+    // Open Edit Modal
+    window.openEditModal = function(id) {
+      const c = Courses.getById(id);
+      if (!c) return;
+
+      document.getElementById('editCourseId').value = c.id;
+      document.getElementById('editCourseName').value = c.name;
+      document.getElementById('editCourseCode').value = c.code;
+      document.getElementById('editCourseDesc').value = c.description || '';
+      document.getElementById('editCourseColor').value = c.color || '#8b5cf6';
+      document.getElementById('editCourseIcon').value = c.icon || '📚';
+      document.getElementById('editCourseTarget').value = c.targetMinutes || 300;
+
+      // Select icon in grid
+      const grid = document.getElementById('editIconSelectorGrid');
+      grid.querySelectorAll('.icon-choice-btn').forEach(b => {
+        if (b.textContent.trim() === (c.icon || '📚')) {
+          b.classList.add('selected');
+        } else {
+          b.classList.remove('selected');
+        }
+      });
+
+      Utils.openModal('editCourseModal');
+    };
+
+    // Edit Form Submit
+    document.getElementById('editCourseForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const id = document.getElementById('editCourseId').value;
+      const name = document.getElementById('editCourseName').value;
+      const code = document.getElementById('editCourseCode').value;
+      const desc = document.getElementById('editCourseDesc').value;
+      const color = document.getElementById('editCourseColor').value;
+      const icon = document.getElementById('editCourseIcon').value;
+      const target = document.getElementById('editCourseTarget').value;
+      const errorEl = document.getElementById('editCourseErrorMsg');
+
+      const res = Courses.update(id, {
+        name,
+        code,
+        description: desc,
+        color,
+        icon,
+        targetMinutes: target
+      });
+
+      if (res.success) {
+        Utils.showToast('Course updated successfully!', 'success');
+        Utils.closeModal('editCourseModal');
+        renderCourses();
+      } else {
+        errorEl.textContent = res.message;
+        errorEl.classList.add('visible');
+      }
+    });
+
+    // Add Form Submit
+    document.getElementById('addCourseForm').addEventListener('submit', (e) => {
+      e.preventDefault();
+      const name = document.getElementById('newCourseName').value;
+      const code = document.getElementById('newCourseCode').value;
+      const desc = document.getElementById('newCourseDesc').value;
+      const color = document.getElementById('newCourseColor').value;
+      const icon = document.getElementById('newCourseIcon').value;
+      const target = document.getElementById('newCourseTarget').value;
+      const errorEl = document.getElementById('addCourseErrorMsg');
+
+      const res = Courses.add(name, code, desc, color, icon, target);
+      if (res.success) {
+        Utils.showToast(`Course "${name}" created!`, 'success');
+        Utils.closeModal('addCourseModal');
+        document.getElementById('addCourseForm').reset();
+        renderCourses();
+      } else {
+        errorEl.textContent = res.message;
+        errorEl.classList.add('visible');
+      }
+    });
+
+    // Toolbar Event Listeners
+    document.getElementById('btnOpenAddCourseModal').addEventListener('click', () => {
+      Utils.openModal('addCourseModal');
+    });
+
+    document.getElementById('courseSearchInput').addEventListener('input', renderCourses);
+
+    document.querySelectorAll('.filter-tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.filter-tab-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        currentStatusFilter = btn.dataset.status;
+        renderCourses();
+      });
+    });
+
+    renderIconGrids();
+    renderCourses();
+  </script>
+</body>
+</html>

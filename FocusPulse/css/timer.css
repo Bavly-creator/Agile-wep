@@ -1,0 +1,484 @@
+/* ==========================================================================
+   FOCUS REACTOR - Futuristic Energy Reactor Pomodoro Timer CSS
+   Electric Violet, Cyan, Lavender, Gold, and Mint Themes
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   1. Reactor Page Container & Layout
+   -------------------------------------------------------------------------- */
+.reactor-page-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 120px);
+  padding: 1.5rem;
+  position: relative;
+  transition: all var(--transition-slow);
+}
+
+.reactor-top-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 800px;
+  margin-bottom: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--bg-card);
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  gap: 1rem;
+}
+
+.reactor-course-selector {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex: 1;
+}
+
+.reactor-course-select {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 0.5rem 0.85rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+  min-width: 180px;
+}
+
+.reactor-mode-tabs {
+  display: flex;
+  background: var(--bg-tertiary);
+  padding: 0.25rem;
+  border-radius: var(--radius-full);
+  gap: 0.25rem;
+}
+
+.reactor-mode-btn {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  color: var(--text-muted);
+  transition: all var(--transition-fast);
+}
+
+.reactor-mode-btn.active {
+  background: linear-gradient(135deg, var(--accent-violet) 0%, var(--accent-cyan) 100%);
+  color: white;
+  box-shadow: 0 0 12px var(--accent-violet-glow);
+}
+
+.reactor-duration-control {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  margin-top: 0.7rem;
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+
+.reactor-duration-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--border-color);
+  border-radius: 50%;
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.reactor-duration-btn:hover {
+  border-color: var(--accent-cyan);
+  color: var(--accent-cyan);
+}
+
+/* --------------------------------------------------------------------------
+   2. The Focus Reactor Core & Concentric Orbital Rings
+   -------------------------------------------------------------------------- */
+.reactor-stage {
+  position: relative;
+  width: 440px;
+  height: 440px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1.5rem auto;
+  user-select: none;
+}
+
+/* Background Ambient Radiation Field */
+.reactor-radiation-glow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.2) 0%, rgba(6, 182, 212, 0.08) 45%, transparent 70%);
+  filter: blur(25px);
+  pointer-events: none;
+  transition: all var(--transition-slow);
+}
+
+/* SVG Circular Rings Container */
+.reactor-svg-rings {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg); /* Start progress at 12 o'clock */
+  pointer-events: none;
+}
+
+.ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.04);
+  stroke-width: 6;
+}
+
+.ring-progress {
+  fill: none;
+  stroke: url(#reactorProgressGradient);
+  stroke-width: 7;
+  stroke-linecap: round;
+  stroke-dasharray: 1194; /* 2 * PI * 190 */
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  filter: drop-shadow(0 0 8px var(--accent-violet));
+}
+
+/* Mechanical Orbital Rings (CSS Rotations) */
+.orbital-ring {
+  position: absolute;
+  border-radius: 50%;
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.orbital-ring-outer {
+  width: 420px;
+  height: 420px;
+  border: 1px dashed rgba(167, 139, 250, 0.25);
+  animation: rotateClockwise 60s linear infinite;
+}
+
+.orbital-ring-mid {
+  width: 360px;
+  height: 360px;
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  border-left-color: var(--accent-cyan);
+  border-right-color: var(--accent-violet);
+  animation: rotateCounterClockwise 35s linear infinite;
+}
+
+.orbital-ring-inner {
+  width: 300px;
+  height: 300px;
+  border: 2px dotted rgba(139, 92, 246, 0.35);
+  animation: rotateClockwise 20s linear infinite;
+}
+
+/* Central Glowing Energy Core */
+.reactor-core {
+  position: relative;
+  width: 250px;
+  height: 250px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, rgba(26, 29, 50, 0.95) 0%, rgba(10, 11, 20, 0.98) 100%);
+  border: 1px solid rgba(139, 92, 246, 0.3);
+  box-shadow: 
+    inset 0 0 30px rgba(139, 92, 246, 0.25),
+    0 0 30px rgba(0, 0, 0, 0.8);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 5;
+  transition: all var(--transition-normal);
+}
+
+.reactor-pulse-disc {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(139, 92, 246, 0.18) 0%, transparent 70%);
+  animation: coreBreathing 4s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* --------------------------------------------------------------------------
+   3. Reactor Digital Displays
+   -------------------------------------------------------------------------- */
+.reactor-status-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent-cyan-light);
+  margin-bottom: 0.35rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  text-shadow: 0 0 10px var(--accent-cyan-glow);
+}
+
+.reactor-status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: var(--accent-cyan);
+  box-shadow: 0 0 8px var(--accent-cyan);
+  animation: statusBlink 2s ease-in-out infinite;
+}
+
+.reactor-countdown {
+  font-family: var(--font-mono);
+  font-size: 3.6rem;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  color: #ffffff;
+  text-shadow: 0 0 20px rgba(139, 92, 246, 0.6), 0 0 40px rgba(6, 182, 212, 0.3);
+  margin: 0.25rem 0;
+}
+
+.reactor-session-label {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  font-weight: 500;
+  max-width: 180px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   4. Reactor Controls Panel
+   -------------------------------------------------------------------------- */
+.reactor-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  margin-top: 2rem;
+  flex-wrap: wrap;
+}
+
+.reactor-aux-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+.btn-reactor-start {
+  background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 50%, #06b6d4 100%);
+  color: white;
+  font-size: 1.15rem;
+  font-weight: 700;
+  padding: 0.9rem 2.5rem;
+  border-radius: var(--radius-full);
+  box-shadow: 0 0 25px var(--accent-violet-glow), 0 4px 15px rgba(0, 0, 0, 0.5);
+  letter-spacing: 0.03em;
+  transition: all var(--transition-normal);
+}
+
+.btn-reactor-start:hover {
+  transform: scale(1.05);
+  box-shadow: 0 0 35px var(--accent-violet-glow), 0 6px 20px rgba(0, 0, 0, 0.6);
+  filter: brightness(1.15);
+}
+
+/* --------------------------------------------------------------------------
+   5. Six Reactor Animation States
+   -------------------------------------------------------------------------- */
+
+/* State 1: IDLE */
+.reactor-stage.state-idle .orbital-ring-outer {
+  animation-duration: 60s;
+}
+.reactor-stage.state-idle .reactor-countdown {
+  color: var(--text-primary);
+}
+
+/* State 2: ACTIVATION */
+.reactor-stage.state-activating {
+  animation: reactorPulseActivate 0.8s ease-out;
+}
+.reactor-stage.state-activating .reactor-pulse-disc {
+  animation: activateShockwave 0.8s ease-out;
+}
+
+/* State 3: DEEP FOCUS */
+.reactor-stage.state-focus .orbital-ring-outer {
+  animation-duration: 35s;
+  border-color: rgba(139, 92, 246, 0.4);
+}
+.reactor-stage.state-focus .orbital-ring-mid {
+  animation-duration: 20s;
+}
+.reactor-stage.state-focus .reactor-core {
+  box-shadow: 
+    inset 0 0 40px rgba(139, 92, 246, 0.4),
+    0 0 45px var(--accent-violet-glow);
+}
+
+/* State 4: FINAL MINUTE (< 60s) - Warm Golden Glow */
+.reactor-stage.state-final-minute .reactor-radiation-glow {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.25) 0%, rgba(251, 191, 36, 0.1) 45%, transparent 70%);
+}
+.reactor-stage.state-final-minute .ring-progress {
+  stroke: url(#reactorGoldenGradient);
+  filter: drop-shadow(0 0 12px var(--accent-amber));
+}
+.reactor-stage.state-final-minute .reactor-countdown {
+  color: #fef08a;
+  text-shadow: 0 0 25px rgba(245, 158, 11, 0.7);
+}
+.reactor-stage.state-final-minute .reactor-status-tag {
+  color: #fcd34d;
+  text-shadow: 0 0 10px var(--accent-amber-glow);
+}
+.reactor-stage.state-final-minute .reactor-status-dot {
+  background-color: var(--accent-amber);
+  box-shadow: 0 0 10px var(--accent-amber);
+}
+
+/* State 5: COMPLETION */
+.reactor-stage.state-complete .reactor-core {
+  animation: completionBurst 1s cubic-bezier(0.1, 0.9, 0.2, 1);
+  box-shadow: 0 0 60px rgba(16, 185, 129, 0.6);
+}
+.reactor-stage.state-complete .reactor-status-tag {
+  color: var(--accent-mint);
+  text-shadow: 0 0 12px var(--accent-mint-glow);
+}
+
+/* State 6: RECOVERY (Break Mode) - Cyan & Mint */
+.reactor-stage.state-recovery .reactor-radiation-glow {
+  background: radial-gradient(circle, rgba(6, 182, 212, 0.22) 0%, rgba(16, 185, 129, 0.1) 45%, transparent 70%);
+}
+.reactor-stage.state-recovery .ring-progress {
+  stroke: url(#reactorRecoveryGradient);
+  filter: drop-shadow(0 0 10px var(--accent-cyan));
+}
+.reactor-stage.state-recovery .reactor-countdown {
+  color: #a7f3d0;
+  text-shadow: 0 0 25px rgba(6, 182, 212, 0.6);
+}
+.reactor-stage.state-recovery .reactor-status-tag {
+  color: var(--accent-mint);
+}
+.reactor-stage.state-recovery .reactor-status-dot {
+  background-color: var(--accent-mint);
+  box-shadow: 0 0 8px var(--accent-mint);
+}
+.reactor-stage.state-recovery .orbital-ring-outer {
+  animation-duration: 90s; /* Gentle slow recovery spin */
+}
+
+/* --------------------------------------------------------------------------
+   6. Deep Focus Mode (Immersive Fullscreen)
+   -------------------------------------------------------------------------- */
+body.deep-focus-active .sidebar,
+body.deep-focus-active .top-navbar,
+body.deep-focus-active .reactor-aux-controls,
+body.deep-focus-active .page-header {
+  display: none !important;
+}
+
+body.deep-focus-active .reactor-stage {
+  transform: scale(1.18);
+  margin: 3rem auto;
+}
+
+.deep-focus-exit-btn {
+  display: none;
+  position: fixed;
+  top: 24px;
+  right: 24px;
+  z-index: 500;
+  background: rgba(18, 20, 34, 0.85);
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  padding: 0.5rem 1rem;
+  border-radius: var(--radius-full);
+  font-size: 0.85rem;
+  backdrop-filter: blur(8px);
+}
+
+body.deep-focus-active .deep-focus-exit-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.deep-focus-exit-btn:hover {
+  color: white;
+  border-color: var(--accent-violet);
+}
+
+/* --------------------------------------------------------------------------
+   7. Keyframes & Animations
+   -------------------------------------------------------------------------- */
+@keyframes rotateClockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rotateCounterClockwise {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(-360deg); }
+}
+
+@keyframes coreBreathing {
+  0%, 100% {
+    transform: scale(0.95);
+    opacity: 0.4;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 0.85;
+  }
+}
+
+@keyframes statusBlink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+@keyframes reactorPulseActivate {
+  0% { transform: scale(0.96); }
+  50% { transform: scale(1.04); }
+  100% { transform: scale(1); }
+}
+
+@keyframes activateShockwave {
+  0% { transform: scale(0.8); opacity: 1; }
+  100% { transform: scale(2.2); opacity: 0; }
+}
+
+@keyframes completionBurst {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.12); }
+  100% { transform: scale(1); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orbital-ring-outer,
+  .orbital-ring-mid,
+  .orbital-ring-inner,
+  .reactor-pulse-disc {
+    animation: none !important;
+  }
+}

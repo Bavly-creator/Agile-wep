@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FocusPulse - Study Streak & Pomodoro Tracker</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="css/responsive.css">
+  <style>
+    .hero-container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 3rem 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: rgba(139, 92, 246, 0.12);
+      border: 1px solid rgba(139, 92, 246, 0.35);
+      padding: 0.4rem 1rem;
+      border-radius: var(--radius-full);
+      color: var(--accent-violet-light);
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    .hero-title {
+      font-size: 3.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      max-width: 820px;
+      margin-bottom: 1.25rem;
+    }
+    .hero-subtitle {
+      font-size: 1.2rem;
+      color: var(--text-secondary);
+      max-width: 620px;
+      margin-bottom: 2.5rem;
+      line-height: 1.6;
+    }
+    .hero-cta-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .feature-grid-landing {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1.5rem;
+      max-width: 1100px;
+      width: 100%;
+      margin-top: 4.5rem;
+      text-align: left;
+    }
+    @media (max-width: 768px) {
+      .hero-title { font-size: 2.4rem; }
+      .feature-grid-landing { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="hero-container">
+    <div class="hero-badge">
+      <span>⚡</span> FocusPulse 2.0 • University Agile Project
+    </div>
+
+    <h1 class="hero-title">
+      Master Your Focus. <br>
+      Ignite Your <span class="text-gradient">Study Streaks</span>.
+    </h1>
+
+    <p class="hero-subtitle">
+      A student productivity platform combining the futuristic <strong>Focus Reactor</strong>, course-linked Pomodoros, streak habit tracking, collaborative study groups, and weekly challenges.
+    </p>
+
+    <div class="hero-cta-group">
+      <a href="dashboard.html" class="btn btn-primary btn-lg">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+        Launch Dashboard
+      </a>
+      <a href="timer.html" class="btn btn-cyan btn-lg">
+        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+        Open Focus Reactor
+      </a>
+      <a href="login.html" class="btn btn-secondary btn-lg">Sign In / Demo</a>
+    </div>
+
+    <!-- Feature Highlights -->
+    <div class="feature-grid-landing">
+      <div class="card">
+        <div style="font-size: 1.8rem; margin-bottom: 0.75rem;">⚛️</div>
+        <h3 style="margin-bottom: 0.5rem;">Focus Reactor</h3>
+        <p class="text-secondary" style="font-size: 0.92rem;">
+          Concentric orbital rings, breathing energy core, 6 animation states, accurate timestamp engine, and deep focus mode.
+        </p>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 1.8rem; margin-bottom: 0.75rem;">🔥</div>
+        <h3 style="margin-bottom: 0.5rem;">Study Streaks</h3>
+        <p class="text-secondary" style="font-size: 0.92rem;">
+          Track consecutive days where your daily session goal was met. Resilient to local timezones and midnight resets.
+        </p>
+      </div>
+
+      <div class="card">
+        <div style="font-size: 1.8rem; margin-bottom: 0.75rem;">🤝</div>
+        <h3 style="margin-bottom: 0.5rem;">Study Groups & Challenges</h3>
+        <p class="text-secondary" style="font-size: 0.92rem;">
+          Create teams with invite codes, pool weekly focus minutes, and conquer shared group challenges together.
+        </p>
+      </div>
+    </div>
+
+    <footer style="margin-top: 4rem; color: var(--text-muted); font-size: 0.85rem;">
+      SET 312 • Agile Software Engineering • Team 7 (FocusPulse)
+    </footer>
+  </div>
+
+  <script src="js/storage.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
