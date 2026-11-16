@@ -1,78 +1,40 @@
-# FocusPulse — Study Streak & Pomodoro Tracker
-**Agile Software Engineering (SET 312) — Team 7**
+# FocusPulse
 
-> A client-side student productivity platform combining the **Focus Reactor**, course management, study streaks, collaborative study circles, and productivity analytics. Built strictly with **HTML5, CSS3, and Vanilla JavaScript (ES6+)** — zero external frameworks, libraries, or backend dependencies.
+FocusPulse is a student-first academic workspace for courses, assignments, study planning, focus sessions, notes, and progress. The frontend uses HTML, CSS, and vanilla JavaScript. Pulse AI remains a separate optional tool.
 
----
+## Run the application
 
-## ⚛️ Signature Feature: FOCUS REACTOR
+Guest mode works locally without an account service:
 
-The centerpiece of FocusPulse is the **Focus Reactor** (`timer.html`), an extraordinary futuristic Pomodoro timer engineered with SVG circular physics, CSS3 keyframe mechanics, and Web Audio API synthesis:
+1. Open `FocusPulse/index.html` with a local static server such as VS Code Live Server.
+2. Choose **Continue as Guest**. Guest data remains on this browser and does not sync.
 
-1. **Central Glowing Energy Core**: Pulsing radial energy disc with live session course labels.
-2. **Concentric Orbital Rings**: 3 mechanical orbital layers rotating at different speeds and axes.
-3. **Circular SVG Progress Ring**: Precise `stroke-dashoffset` interpolation calculated from real time.
-4. **Accurate `Date.now()` Timestamp Engine**: Survives browser tab switches and page refreshes.
-5. **6 Animation States**:
-   - `IDLE`: Breathing energy core, gentle rotation, "REACTOR READY".
-   - `ACTIVATION`: Expanding shockwave, core brightens, ignition sound.
-   - `DEEP FOCUS`: Smooth orbital rotation, minimal visual distraction.
-   - `FINAL MINUTE`: (< 60s remaining) Warm golden gradient transition.
-   - `COMPLETION`: Energy celebration burst, triumphant harmonic chime, auto-transitions to 5-minute break.
-   - `RECOVERY`: Gentle cyan and mint soothing glow, break countdown.
-6. **Deep Focus Mode**: Immersive distraction-free fullscreen view with dedicated exit control (`Esc`).
-7. **Synthesized Sound Design**: Built-in Web Audio API oscillators for activation, completion, and break chimes (no external `.mp3` assets required).
+Account creation, sign-in, verification, and password recovery require the Node server:
 
----
+1. From the repository root, install the existing dependencies with `npm install`.
+2. Copy the account settings from `.env.example` into `.env` and configure the values below.
+3. Set `APP_BASE_URL=http://localhost:3000` for local development.
+4. Set `RESEND_API_KEY` and `EMAIL_FROM` to a Resend API key and a verified sender address.
+5. Run `npm start` and open `http://localhost:3000`.
 
-## 📋 Implementation Checklist: 5 Epics & All 19 User Stories
+Without Resend configuration, registration and recovery return a clear configuration error; they do not simulate email delivery or mark addresses verified.
 
-| Epic | Story ID | Title | Points | Status | Implementation Details |
-|---|---|---|---|:---:|---|
-| **E1** | **S01** | Register and log in | 3 | ✅ Complete | Full validation, duplicate email check, one-click demo login, session persistence (`auth.js`, `login.html`, `register.html`). |
-| **E2** | **S02** | Add my courses | 2 | ✅ Complete | Course CRUD with custom color picker, unique name/code checks, focus time tracking (`courses.js`, `courses.html`). |
-| **E2** | **S03** | Start 25-min focus session | 5 | ✅ Complete | Focus Reactor timestamp delta countdown, refresh survival, auto-stats increment (`timer.js`, `timer.html`). |
-| **E2** | **S04** | Interrupted session does not count | 3 | ✅ Complete | Cancellation modal; logged as interrupted with **0 minutes credited**, streak unaffected (`timer.js`). |
-| **E1** | **S05** | Set a daily goal | 2 | ✅ Complete | Range between 1 and 12 sessions (25m - 300m), real-time progress radial widget (`goals.js`, `settings.html`). |
-| **E3** | **S06** | See current streak | 5 | ✅ Complete | Computes consecutive qualifying calendar days where daily goal was met (`streaks.js`, `streaks.html`). |
-| **E2** | **S07** | Automatic 5-minute break | 3 | ✅ Complete | Synthesized relaxation chime, auto-starts recovery mode after 25m, skip option (`timer.js`). |
-| **E3** | **S08** | Daily log of minutes per course | 5 | ✅ Complete | Filterable session table, date groupings, completed vs. interrupted badges (`history.js`, `history.html`). |
-| **E3** | **S09** | Streak resets after missed day | 3 | ✅ Complete | Calendar day gap detection resets active streak to 0 while keeping historical records (`streaks.js`). |
-| **E1** | **S10** | Log out | 2 | ✅ Complete | Clears current user authentication and active timers, redirects to login (`auth.js`). |
-| **E4** | **S11** | Create a study group | 5 | ✅ Complete | Generates unique 6-character code (`FP-XXXX`), assigns creator role (`groups.js`, `groups.html`). |
-| **E4** | **S12** | Join group with code | 3 | ✅ Complete | Code validation, duplicate membership prevention, joins study circle (`groups.js`, `groups.html`). |
-| **E4** | **S13** | Group weekly total | 5 | ✅ Complete | Computes team total minutes and real-time member leaderboard ranking (`groups.js`, `group-details.html`). |
-| **E4** | **S14** | Weekly group challenge | 5 | ✅ Complete | Collective team focus target, visual progress bar, celebration state when target reached (`challenges.js`, `challenges.html`). |
-| **E1** | **S15** | Reset password | 3 | ✅ Complete | Password reset demonstration with email verification and password update (`auth.js`, `reset-password.html`). |
-| **E3** | **S16** | Local timezone and midnight | 5 | ✅ Complete | Uses local system calendar dates (`YYYY-MM-DD`), preventing UTC date drift bugs (`utils.js`, `streaks.js`). |
-| **E5** | **S17** | Weekly statistics chart | 5 | ✅ Complete | Pure HTML5 Canvas rendering for weekly focus bar chart and course donut chart without external libraries (`insights.js`, `insights.html`). |
-| **E5** | **S18** | Streak milestone badges | 5 | ✅ Complete | Unlocks 3-day, 7-day, 30-day streak milestones and 100-min badges with toast celebrations (`badges.js`, `badges.html`). |
-| **E5** | **S19** | Distraction notes | 3 | ✅ Complete | In-session quick note modal, category filters (Social media, Noise, Daydreaming) (`distractions.js`, `distractions.html`). |
+## Account service status
 
-**Total Backlog Points:** **72 Points** (MVP: S01–S14 = 51 Points, Stretch: S15–S19 = 21 Points)
+The Express server stores account records in a local JSON development store at `data/focuspulse-auth.json` (ignored by Git). Passwords use Node's scrypt hash; verification and password-reset tokens are stored as hashes and expire after 30 minutes. Login sessions use HttpOnly, SameSite cookies, CSRF checks for logout, and in-memory session state. Restarting the server revokes active sessions.
 
----
+This is a single-instance development setup, not a production database or multi-server session store. Before production use, connect a managed database and shared session store, configure HTTPS and a verified mail domain, and review operational backups, monitoring, and deployment security.
 
-## 🚀 How to Run Locally
+Academic feature data is still stored locally in browser localStorage, including for a signed-in account. Guest-to-account sign-in keeps the existing workspace on the same device; the application does not currently synchronize academic records to the server. Clearing browser data can remove those records.
 
-Because this project is built exclusively with standard Web standards (**HTML5, CSS3, Vanilla JavaScript**), it requires no installation, no build steps, and no backend database.
+## Existing data
 
-### Option 1: VS Code Live Server (Recommended)
-1. Open this repository folder in **VS Code**.
-2. Right-click on `index.html` (or `FocusPulse/index.html`) and select **"Open with Live Server"**.
-3. Your browser will open `http://127.0.0.1:5500/` or `http://127.0.0.1:5500/FocusPulse/index.html`.
+Existing localStorage records are retained. New installations start with empty courses and activity so dashboards and statistics reflect real student actions instead of sample sessions. The former demo account and plaintext browser password are no longer used.
 
-### Option 2: Direct Browser Launch
-- Double-click `FocusPulse/index.html` to open it in Chrome, Edge, Safari, or Firefox directly.
+The welcome, sign-in, registration, verification, and recovery screens share the split-screen FocusPulse brand layout. The planner stores weekly study availability, timed commitments, exam topics, and confidence levels locally. Its deterministic plan suggestions use open tasks, exam topics, deadlines, and saved time windows; suggestions are added as separate calendar entries, and replacing previous suggestions requires confirmation. Study groups are currently local records and do not support cross-device collaboration. Study journals are saved in the local notebook and can link to a course and a completed focus session.
 
----
+## Optional AI service
 
-## 🔒 Storage & Architecture Notice
-This application uses **Browser LocalStorage** for structured local data persistence. It includes pre-seeded demonstration data for:
-- Pre-registered Student Account: `bavly@focuspulse.io` (password: `password123`)
-- 4 University Academic Courses
-- 3-day consecutive study streak with qualifying sessions
-- Study Group: `ECU Team 7 - FocusPulse` (Code: `FP-7712`)
-- Pre-unlocked and pending milestone achievement badges
+Pulse AI uses the existing Gemini server integration. Set `GEMINI_API_KEY` on the server; never add provider credentials to frontend JavaScript. Upload and generation require a configured AI provider. Current document extraction supports TXT, Markdown, JSON, and CSV only. PDF, DOCX, PPTX, and image extraction need a document-processing service before those formats can be enabled. Uploaded source files are removed after text extraction; extracted text is held in server memory and is cleared when the server restarts.
 
-> **Academic Note:** LocalStorage is ideal for local evaluation, demonstrations, and offline single-user experiences. For production multi-user sharing across separate physical devices, a server-side database and secure authentication service would be integrated.
+Email verification and password recovery require a Resend account, a verified sender, and the `RESEND_API_KEY`, `EMAIL_FROM`, and `APP_BASE_URL` values. These flows are not considered live until delivery is verified with the configured provider.

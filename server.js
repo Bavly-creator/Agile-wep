@@ -12,6 +12,8 @@ import multer from 'multer';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import fs from 'fs';
+import { randomUUID } from 'node:crypto';
+import authRoutes from './server/auth.routes.js';
 
 dotenv.config();
 
@@ -32,8 +34,20 @@ if (fs.existsSync(staticPath)) {
   app.use(express.static(staticPath));
 }
 
+app.use('/api/auth', authRoutes);
+
 // In-Memory Document Store (backed by uploads)
 const documentsStore = new Map();
+const aiRateBuckets = new Map();
+app.use('/api/ai', (req, res, next) => {
+  const now = Date.now();
+  const key = req.ip || req.socket.remoteAddress || 'unknown';
+  const recent = (aiRateBuckets.get(key) || []).filter(timestamp => now - timestamp < 15 * 60 * 1000);
+  if (recent.length >= 60) return res.status(429).json({ error: 'Pulse AI is receiving too many requests from this connection. Please wait and try again.' });
+  recent.push(now);
+  aiRateBuckets.set(key, recent);
+  next();
+});
 
 // Configure Multer for lecture uploads
 const uploadDir = path.join(__dirname, 'uploads');
@@ -44,7 +58,7 @@ if (!fs.existsSync(uploadDir)) {
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
+    const uniqueSuffix = `${Date.now()}-${randomUUID()}`;
     cb(null, uniqueSuffix + '-' + file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_'));
   }
 });
@@ -112,7 +126,6 @@ app.get('/api/health', (req, res) => {
     version: '1.0.0',
     geminiConfigured: !!process.env.GEMINI_API_KEY,
     geminiModel: process.env.GEMINI_MODEL || 'gemini-flash-lite-latest',
-    openaiConfigured: !!process.env.OPENAI_API_KEY,
     documentsCount: documentsStore.size,
     timestamp: new Date().toISOString()
   });
@@ -133,6 +146,13 @@ app.post('/api/ai/chat', async (req, res) => {
     const doc = documentsStore.get(documentId);
     documentTitle = doc.title;
     documentContext = doc.text.substring(0, 15000); // ground context
+  }
+  if (documentId && !documentContext && (mode === 'lecture' || mode === 'combined')) {
+    return res.status(404).json({ error: 'This lecture is no longer available in the AI service. Upload it again to use lecture-grounded answers.' });
+  }
+  if (!documentContext && typeof req.body.documentText === 'string') {
+    documentContext = req.body.documentText.slice(0, 15000);
+    documentTitle = String(req.body.documentTitle || 'Uploaded lecture').slice(0, 200);
   }
 
   // Define System Prompt according to Mode
@@ -227,22 +247,17 @@ app.post('/api/ai/upload', upload.single('file'), async (req, res) => {
       if (ext === '.txt' || ext === '.md' || ext === '.json' || ext === '.csv') {
         extractedText = fs.readFileSync(file.path, 'utf8');
       } else {
-        // Simulated structural extraction for PDF/DOCX slides
-        extractedText = `Document: ${docTitle}\n` +
-          `[Slide 1] Introduction to ${docTitle}: Core principles, scope, and learning outcomes.\n` +
-          `[Slide 2] Fundamental Concepts: Definitions, primary frameworks, and methodologies.\n` +
-          `[Slide 3] Key Processes: Step-by-step workflow, lifecycle stages, and deliverables.\n` +
-          `[Slide 4] Architectural Patterns: Components, boundaries, and communication flows.\n` +
-          `[Slide 5] Best Practices & Anti-Patterns: Common pitfalls, metrics, and quality gates.\n` +
-          `[Slide 6] Examination Review: Critical summary points and self-assessment criteria.`;
+        fs.unlinkSync(file.path);
+        return res.status(415).json({ error: 'This server currently extracts text from TXT, Markdown, JSON, and CSV files only. PDF, DOCX, PPTX, and image extraction is not configured.' });
       }
+      if (!extractedText.trim()) { fs.unlinkSync(file.path); return res.status(400).json({ error: 'The uploaded file contains no readable text.' }); }
     } else if (req.body.text) {
       extractedText = req.body.text;
     } else {
       return res.status(400).json({ error: 'No file or text provided' });
     }
 
-    const docId = 'doc_' + Date.now();
+    const docId = `doc_${randomUUID()}`;
     const docRecord = {
       id: docId,
       title: docTitle,
@@ -251,10 +266,11 @@ app.post('/api/ai/upload', upload.single('file'), async (req, res) => {
       text: extractedText,
       uploadedAt: new Date().toISOString(),
       size: file ? file.size : extractedText.length,
-      slideCount: (extractedText.match(/\[Slide \d+\]/gi) || []).length || 6
+      slideCount: (extractedText.match(/\[Slide \d+\]/gi) || []).length
     };
 
     documentsStore.set(docId, docRecord);
+    if (file) fs.unlinkSync(file.path);
 
     res.json({
       success: true,
@@ -277,7 +293,7 @@ app.post('/api/ai/upload', upload.single('file'), async (req, res) => {
 app.post('/api/ai/generate', async (req, res) => {
   const { type, documentId, courseTitle, customTopic } = req.body;
 
-  let context = customTopic || 'Agile Software Engineering & Scrum Methodology';
+  let context = typeof customTopic === 'string' ? customTopic.trim() : '';
   let title = courseTitle || 'Lecture Material';
 
   if (documentId && documentsStore.has(documentId)) {
@@ -285,6 +301,8 @@ app.post('/api/ai/generate', async (req, res) => {
     context = doc.text;
     title = doc.title;
   }
+
+  if (!context) return res.status(400).json({ error: 'Add or select readable study material before generating notes, flashcards, or a quiz.' });
 
   try {
     if (type === 'summary') {
@@ -303,7 +321,8 @@ Output clean GitHub-flavored markdown.`;
 
       const response = await callGemini(prompt, 'You are an expert university professor creating study notes.');
       const data = await response.json();
-      const content = data?.candidates?.[0]?.content?.parts?.[0]?.text || 'Summary generation unavailable.';
+      const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (!content) throw new Error('The AI provider returned no summary. Please try again.');
 
       res.json({ type: 'summary', summaryType, title, content });
     } else if (type === 'flashcards') {
@@ -318,7 +337,7 @@ ${context.substring(0, 8000)}`;
 
       const response = await callGemini(prompt, 'Return strictly valid JSON array only. No markdown formatting or code blocks.');
       const data = await response.json();
-      let rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+      let rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
       rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
       const flashcards = JSON.parse(rawText);
 
@@ -340,7 +359,7 @@ ${context.substring(0, 8000)}`;
 
       const response = await callGemini(prompt, 'Return strictly valid JSON array only. No markdown formatting or code blocks.');
       const data = await response.json();
-      let rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '[]';
+      let rawText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
       rawText = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
       const quiz = JSON.parse(rawText);
 
@@ -354,24 +373,10 @@ ${context.substring(0, 8000)}`;
   }
 });
 
-// 5. List Documents
-app.get('/api/ai/documents', (req, res) => {
-  const docs = Array.from(documentsStore.values()).map(d => ({
-    id: d.id,
-    title: d.title,
-    courseId: d.courseId,
-    fileName: d.fileName,
-    slideCount: d.slideCount,
-    uploadedAt: d.uploadedAt
-  }));
-  res.json({ documents: docs });
-});
-
 // Start Server
 app.listen(PORT, () => {
   console.log(`===============================================`);
   console.log(`FocusPulse - Pulse AI Server running on http://localhost:${PORT}`);
   console.log(`Gemini Model: ${process.env.GEMINI_MODEL || 'gemini-flash-lite-latest'}`);
-  console.log(`OpenAI Integration: ${process.env.OPENAI_API_KEY ? 'Configured' : 'Optional (Fallback ready)'}`);
   console.log(`===============================================`);
 });

@@ -9,7 +9,8 @@
     (function() {
       try {
         const p = localStorage.getItem('focuspulse_preferences');
-        const theme = p ? JSON.parse(p).theme || 'dark' : 'dark';
+        const savedTheme = p ? JSON.parse(p).theme : null;
+        const theme = savedTheme && savedTheme !== 'system' ? savedTheme : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', theme);
       } catch (e) {}
     })();
@@ -109,6 +110,7 @@
       box-shadow: 0 0 10px var(--accent-violet-glow);
     }
   </style>
+  <link rel="stylesheet" href="css/sage-paper.css">
 </head>
 <body>
 
@@ -186,9 +188,9 @@
 
       <div class="sidebar-footer">
         <a href="profile.html" class="user-snippet">
-          <div class="user-avatar">BR</div>
+          <div class="user-avatar">ST</div>
           <div class="user-info">
-            <div class="user-name">Bavly Romany</div>
+            <div class="user-name">Student</div>
             <div class="user-role">Student</div>
           </div>
         </a>
@@ -212,7 +214,7 @@
         <div class="top-navbar-right">
           <div class="streak-pill-top">
             <span>🔥</span>
-            <span id="topbarStreakCount">3d</span>
+            <span id="topbarStreakCount">0d</span>
           </div>
 
           <button class="theme-toggle-btn" title="Toggle Theme">
@@ -288,7 +290,7 @@
         <div class="form-group">
           <label class="form-label" for="newCourseColor">Accent Color</label>
           <div style="display: flex; gap: 0.75rem; align-items: center;">
-            <input type="color" id="newCourseColor" value="#8b5cf6" style="border: none; background: none; width: 44px; height: 44px; cursor: pointer;">
+            <input type="color" id="newCourseColor" value="#244333" style="border: none; background: none; width: 44px; height: 44px; cursor: pointer;">
             <span style="font-size: 0.85rem; color: var(--text-muted);">Choose a visual theme color for this course</span>
           </div>
         </div>
@@ -478,9 +480,7 @@
                 <span>Total: <strong>${Utils.formatMinutes(stats.totalMinutes)}</strong></span> • 
                 <span>Sessions: <strong>${stats.completedSessions}</strong></span>
               </div>
-              <a href="timer.html?course=${c.id}" class="btn btn-secondary btn-sm" ${isArchived ? 'style="pointer-events: none; opacity: 0.5;"' : ''}>
-                Study with Reactor →
-              </a>
+              <div style="display:flex;gap:.45rem;flex-wrap:wrap;justify-content:flex-end"><a href="course-details.html?id=${encodeURIComponent(c.id)}" class="btn btn-ghost btn-sm">Course details</a><a href="timer.html?course=${encodeURIComponent(c.id)}" class="btn btn-secondary btn-sm" ${isArchived ? 'aria-disabled="true" tabindex="-1" style="pointer-events:none;opacity:.5"' : ''}>Study with Focus Timer →</a></div>
             </div>
           </div>
         `;
@@ -517,7 +517,7 @@
       document.getElementById('editCourseName').value = c.name;
       document.getElementById('editCourseCode').value = c.code;
       document.getElementById('editCourseDesc').value = c.description || '';
-      document.getElementById('editCourseColor').value = c.color || '#8b5cf6';
+      document.getElementById('editCourseColor').value = c.color || '#244333';
       document.getElementById('editCourseIcon').value = c.icon || '📚';
       document.getElementById('editCourseTarget').value = c.targetMinutes || 300;
 

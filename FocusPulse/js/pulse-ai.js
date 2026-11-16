@@ -1,7 +1,7 @@
 /**
  * Pulse AI Client Engine - FocusPulse
  * University Project - Team 7
- * Dual-Mode Engine: Direct Gemini SSE Streaming + Offline Academic Simulation
+ * Optional academic assistant powered through the server API.
  * 3 AI Modes, 3D Flip Flashcards, Practice Quiz Runner, and Focus Reactor Integration
  */
 
@@ -21,112 +21,8 @@
     quizQuestions: [],
     currentQuizIndex: 0,
     quizScore: 0,
-    apiKey: '',
-    apiModel: 'gemini-flash-lite-latest',
     isGenerating: false
   };
-
-  // Pre-seeded academic materials for university demo fail-safety
-  const SEED_DOCUMENTS = [
-    {
-      id: 'doc_agile_301',
-      title: 'CS301 Agile Software Engineering - Sprint Planning & Epics',
-      courseId: 'c1',
-      fileName: 'CS301_Lecture_4_Sprint_Planning.pdf',
-      slideCount: 8,
-      uploadedAt: new Date(Date.now() - 86400000 * 2).toISOString(),
-      text: `[Slide 1] Course: CS301 Agile Software Engineering. Topic: Sprint Planning, Epics, and User Story Estimation.
-[Slide 2] The Product Backlog: A single ordered list of everything that is known to be needed in the product. Maintained exclusively by the Product Owner.
-[Slide 3] Epics & User Stories: An Epic is a large body of work that can be broken down into specific user stories. Stories use the format: As a [user], I want [feature], so that [benefit].
-[Slide 4] Story Points & Planning Poker: Fibonacci sequence (1, 2, 3, 5, 8, 13) used for relative sizing based on effort, complexity, and risk.
-[Slide 5] The Sprint Goal & Commitment: The Sprint Backlog is owned by the Developers. Once sprint begins, scope cannot be changed if it endangers the Sprint Goal.
-[Slide 6] Daily Standup: 15-minute timebox answering: What did I accomplish yesterday? What will I work on today? Any impediments?
-[Slide 7] Definition of Done (DoD): Formal criteria required before a backlog item can be declared an increment (e.g. code reviewed, tested, deployed).
-[Slide 8] Sprint Review vs Retrospective: Review inspects the increment with stakeholders; Retrospective inspects team processes, relationships, and tooling for continuous improvement.`
-    },
-    {
-      id: 'doc_math_201',
-      title: 'MATH201 Discrete Mathematics - Graphs & Trees',
-      courseId: 'c2',
-      fileName: 'MATH201_Graph_Theory.pdf',
-      slideCount: 6,
-      uploadedAt: new Date(Date.now() - 86400000 * 5).toISOString(),
-      text: `[Slide 1] Graph Theory Basics: Vertices (V) and Edges (E). Directed vs Undirected graphs.
-[Slide 2] Paths, Cycles, and Connected Components: Simple path, Euler path vs Hamiltonian path.
-[Slide 3] Trees: Connected undirected graph with no cycles. A tree with n vertices always has exactly n - 1 edges.
-[Slide 4] Spanning Trees & Prim's Algorithm: Greedy algorithm for finding a minimum spanning tree (MST) in a weighted connected graph.
-[Slide 5] Kruskal's Algorithm: Sorts all edges by weight and adds edges with no cycle using Disjoint Set Union (DSU).
-[Slide 6] Graph Traversal: BFS (queue, shortest path in unweighted graph) vs DFS (stack/recursion, topological sort).`
-    }
-  ];
-
-  const SEED_FLASHCARDS = [
-    {
-      id: 'fc1',
-      courseId: 'c1',
-      question: 'What is the role of the Product Owner in Sprint Planning?',
-      answer: 'The Product Owner presents the highest priority backlog items and explains the objective/Sprint Goal to the team.',
-      citation: 'Slide 2'
-    },
-    {
-      id: 'fc2',
-      courseId: 'c1',
-      question: 'What is the primary difference between Sprint Review and Sprint Retrospective?',
-      answer: 'Sprint Review inspects the product increment with stakeholders; Retrospective inspects internal team processes and tooling.',
-      citation: 'Slide 8'
-    },
-    {
-      id: 'fc3',
-      courseId: 'c1',
-      question: 'What is the Definition of Done (DoD)?',
-      answer: 'A formal checklist of quality standards (tests, code review, docs) that every story must satisfy before release.',
-      citation: 'Slide 7'
-    },
-    {
-      id: 'fc4',
-      courseId: 'c1',
-      question: 'Why does Planning Poker use the Fibonacci sequence for estimation?',
-      answer: 'To reflect increasing uncertainty and risk as task size grows, preventing false precision.',
-      citation: 'Slide 4'
-    }
-  ];
-
-  const SEED_QUIZ = [
-    {
-      id: 'q1',
-      question: 'Who owns the Sprint Backlog during an active sprint?',
-      options: [
-        'The Product Owner',
-        'The Developers / Engineering Team',
-        'The Scrum Master',
-        'The Project Sponsor'
-      ],
-      correctIndex: 1,
-      explanation: 'The Developers own the Sprint Backlog and have full autonomy over how work is planned and executed during the sprint.',
-      citation: 'Slide 5'
-    },
-    {
-      id: 'q2',
-      question: 'How many edges does a tree with n vertices have in graph theory?',
-      options: ['n', 'n + 1', 'n - 1', '2n'],
-      correctIndex: 2,
-      explanation: 'In graph theory, every valid tree with n vertices has exactly n - 1 edges.',
-      citation: 'Slide 3'
-    },
-    {
-      id: 'q3',
-      question: 'What are the three questions answered in the Daily Scrum?',
-      options: [
-        'Bug counts, velocity, burndown status',
-        'Yesterday work, today work, impediments',
-        'Code commits, merge requests, deployment date',
-        'Story points delivered, remaining points, backlog updates'
-      ],
-      correctIndex: 1,
-      explanation: 'Daily Scrum focuses on what was done yesterday, what will be done today, and any blocking impediments.',
-      citation: 'Slide 6'
-    }
-  ];
 
   // -------------------------------------------------------------
   // INITIALIZATION & STORAGE
@@ -160,24 +56,21 @@
 
     renderFlashcard();
     renderQuiz();
-    renderSummary('quick');
+    const summaryDisplay = document.getElementById('pulseSummaryDisplay');
+    if (summaryDisplay) summaryDisplay.textContent = 'Select a lecture and choose a study note format when you are ready.';
   }
 
   function loadDocuments() {
     try {
       const userId = getCurrentUserId();
       const stored = localStorage.getItem(`focuspulse_ai_documents_${userId}`);
-      const legacyStored = localStorage.getItem('focuspulse_ai_documents');
-      state.documents = stored ? JSON.parse(stored) : (legacyStored ? JSON.parse(legacyStored) : SEED_DOCUMENTS);
-      if (!state.documents || state.documents.length === 0) {
-        state.documents = SEED_DOCUMENTS;
-      }
-      state.documents = state.documents.map(doc => ({ ...doc, userId }));
+      const docs = stored ? JSON.parse(stored) : [];
+      state.documents = Array.isArray(docs) ? docs.filter(doc => doc.serverDocumentId || /\.(txt|md|json|csv)$/i.test(doc.fileName || '')).map(doc => ({ ...doc, id: doc.serverDocumentId || doc.id, serverDocumentId: doc.serverDocumentId || null })) : [];
       saveDocuments();
       state.activeDocId = state.documents[0]?.id || null;
     } catch (e) {
-      state.documents = SEED_DOCUMENTS;
-      state.activeDocId = SEED_DOCUMENTS[0].id;
+      state.documents = [];
+      state.activeDocId = null;
     }
   }
 
@@ -197,6 +90,7 @@
       const legacyStored = localStorage.getItem('focuspulse_ai_chats');
       state.chats = stored ? JSON.parse(stored) : (legacyStored ? JSON.parse(legacyStored) : []);
       state.chats = state.chats.filter(chat => !chat.userId || chat.userId === getCurrentUserId());
+      state.chats.forEach(chat => { chat.messages = (chat.messages || []).filter(message => message.role !== 'ai'); });
       state.chats.forEach(chat => { chat.userId = getCurrentUserId(); });
       if (state.chats.length === 0) {
         createNewChat();
@@ -217,27 +111,62 @@
 
   function loadFlashcards() {
     try {
-      const stored = localStorage.getItem('focuspulse_ai_flashcards');
-      state.flashcards = stored ? JSON.parse(stored) : SEED_FLASHCARDS;
-      if (!state.flashcards.length) state.flashcards = SEED_FLASHCARDS;
+      const stored = localStorage.getItem(`focuspulse_ai_flashcards_${getCurrentUserId()}`);
+      state.flashcards = stored ? JSON.parse(stored) : [];
+      if (!Array.isArray(state.flashcards)) state.flashcards = [];
     } catch (e) {
-      state.flashcards = SEED_FLASHCARDS;
+      state.flashcards = [];
     }
   }
 
   function saveFlashcards() {
     try {
-      localStorage.setItem('focuspulse_ai_flashcards', JSON.stringify(state.flashcards));
+      localStorage.setItem(`focuspulse_ai_flashcards_${getCurrentUserId()}`, JSON.stringify(state.flashcards));
     } catch (e) {}
+  }
+
+  function saveQuiz() {
+    try { localStorage.setItem(`focuspulse_ai_quiz_${getCurrentUserId()}`, JSON.stringify(state.quizQuestions)); } catch (e) {}
+  }
+
+  async function generateStudyTool(type) {
+    const activeDoc = state.documents.find(doc => doc.id === state.activeDocId);
+    const status = document.getElementById(type === 'quiz' ? 'pulseQuizQuestion' : 'pulseCardFrontText');
+    if (!activeDoc) {
+      if (status) status.textContent = 'Add and select a readable lecture first.';
+      return;
+    }
+    if (status) status.textContent = 'Creating study material…';
+    try {
+      const response = await fetch('/api/ai/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type, documentId: activeDoc.serverDocumentId || activeDoc.id }) });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Request failed (${response.status}).`);
+      if (type === 'quiz') {
+        if (!Array.isArray(result.quiz) || result.quiz.some(q => !q.question || !Array.isArray(q.options) || !Number.isInteger(q.correctIndex))) throw new Error('The service returned an invalid quiz. Try again.');
+        state.quizQuestions = result.quiz;
+        state.currentQuizIndex = 0;
+        state.quizScore = 0;
+        saveQuiz();
+        renderQuiz();
+      } else {
+        if (!Array.isArray(result.flashcards) || result.flashcards.some(card => !card.question || !card.answer)) throw new Error('The service returned invalid flashcards. Try again.');
+        state.flashcards = result.flashcards.map(card => ({ ...card, mastered: false }));
+        state.currentCardIndex = 0;
+        saveFlashcards();
+        renderFlashcard();
+      }
+    } catch (error) {
+      if (status) status.textContent = `Study material generation is unavailable: ${error.message}`;
+    }
   }
 
   function loadQuiz() {
     try {
-      const stored = localStorage.getItem('focuspulse_ai_quiz');
-      state.quizQuestions = stored ? JSON.parse(stored) : SEED_QUIZ;
-      if (!state.quizQuestions.length) state.quizQuestions = SEED_QUIZ;
+      const stored = localStorage.getItem(`focuspulse_ai_quiz_${getCurrentUserId()}`);
+      state.quizQuestions = stored ? JSON.parse(stored) : [];
+      if (!Array.isArray(state.quizQuestions)) state.quizQuestions = [];
     } catch (e) {
-      state.quizQuestions = SEED_QUIZ;
+      state.quizQuestions = [];
     }
   }
 
@@ -269,13 +198,7 @@
       courseId: state.activeCourseId !== 'all' ? state.activeCourseId : 'c1',
       docId: state.activeDocId,
       createdAt: new Date().toISOString(),
-      messages: [
-        {
-          role: 'ai',
-          text: `👋 Hello! I am **Pulse AI**, your dedicated academic copilot.\n\nI can help you review lecture slides, prepare exam cheat sheets, quiz your knowledge, or generate interactive flashcards.\n\nSelect a mode above: **Lecture Mode** (grounded in your slides with citations), **General Tutor**, or **Combined**!`,
-          timestamp: new Date().toISOString()
-        }
-      ]
+      messages: []
     };
     state.chats.unshift(newChat);
     state.activeChatId = newChat.id;
@@ -411,152 +334,59 @@
 
     // Attempt streaming with Gemini
     let accumulatedText = '';
-    let usedDirectApi = false;
-
     try {
       accumulatedText = await callStreamingGemini(text, state.mode, docContext, (delta) => {
         accumulatedText += delta;
         contentEl.innerHTML = formatMarkdown(accumulatedText);
         const wrap = document.getElementById('pulseMessagesWrap');
         if (wrap) wrap.scrollTop = wrap.scrollHeight;
-      });
-      usedDirectApi = true;
+      }, activeDoc?.serverDocumentId || activeDoc?.id);
     } catch (apiError) {
-      console.warn('Direct Gemini API stream unavailable, engaging academic intelligent fallback:', apiError.message);
-      // Fallback: intelligent academic response simulation
-      accumulatedText = await generateAcademicFallback(text, state.mode, activeDoc, (delta) => {
-        accumulatedText += delta;
-        contentEl.innerHTML = formatMarkdown(accumulatedText);
-        const wrap = document.getElementById('pulseMessagesWrap');
-        if (wrap) wrap.scrollTop = wrap.scrollHeight;
-      });
+      accumulatedText = `Pulse AI is unavailable right now. ${apiError.message || 'Check the server and AI provider configuration, then try again.'}`;
+      contentEl.textContent = accumulatedText;
     }
 
     // Clean up cursor
     if (cursorEl) cursorEl.remove();
     contentEl.innerHTML = formatMarkdown(accumulatedText);
 
-    currentChat.messages.push({
-      role: 'ai',
-      text: accumulatedText,
-      timestamp: new Date().toISOString()
-    });
-    saveChats();
+    if (!accumulatedText.startsWith('Pulse AI is unavailable')) {
+      currentChat.messages.push({ role: 'ai', text: accumulatedText, timestamp: new Date().toISOString() });
+      saveChats();
+    }
     state.isGenerating = false;
   }
 
-  // Direct SSE Streaming from Gemini API
-  async function callStreamingGemini(userPrompt, mode, docContext, onChunk) {
-    if (!state.apiKey) throw new Error('Direct AI key is not configured; using the safe local fallback.');
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${state.apiModel}:streamGenerateContent?alt=sse&key=${state.apiKey}`;
-
-    let systemPrompt = '';
-    if (mode === 'lecture') {
-      systemPrompt = `You are Pulse AI in LECTURE MODE for university students.
-STRICT RULE: Only use facts from the lecture notes provided below.
-Provide bracketed citations for claims (e.g. [Slide 3] or [Slide 4]).
-If not found in the material, state that it is not covered in the slides.
-Lecture Notes:\n${docContext}`;
-    } else if (mode === 'combined') {
-      systemPrompt = `You are Pulse AI in COMBINED MODE. First answer using the provided lecture context with citations like [Slide 2], then broaden with real-world computer science context and practical examples.
-Lecture Notes:\n${docContext}`;
-    } else {
-      systemPrompt = `You are Pulse AI in GENERAL TUTOR MODE. Explain clearly with analogies, code snippets if applicable, and study tips.`;
-    }
-
-    const payload = {
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: `[System Instruction: ${systemPrompt}]\n\nStudent Question: ${userPrompt}` }]
-        }
-      ]
-    };
-
-    const response = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
+  // Stream real responses from the server; provider credentials stay server-side.
+  async function callStreamingGemini(userPrompt, mode, docContext, onChunk, documentId) {
+    const response = await fetch('/api/ai/chat', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: userPrompt, mode, documentId, stream: true })
     });
-
     if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
+      const problem = await response.json().catch(() => ({}));
+      throw new Error(problem.error || `Pulse AI request failed (${response.status}).`);
     }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let fullOutput = '';
-
+    const reader = response.body.getReader(), decoder = new TextDecoder();
+    let buffer = '', fullOutput = '';
     while (true) {
       const { done, value } = await reader.read();
+      buffer += decoder.decode(value || new Uint8Array(), { stream: !done });
+      const events = buffer.split(/\r?\n\r?\n/); buffer = events.pop() || '';
+      for (const event of events) {
+        const line = event.split(/\r?\n/).find(item => item.startsWith('data: '));
+        if (!line) continue;
+        const payload = line.slice(6);
+        if (payload === '[DONE]') continue;
+        const part = JSON.parse(payload);
+        if (part.error) throw new Error(part.error);
+        if (part.text) { fullOutput += part.text; onChunk(part.text); }
+      }
       if (done) break;
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split('\n');
-      for (const line of lines) {
-        if (line.startsWith('data: ')) {
-          try {
-            const json = JSON.parse(line.substring(6));
-            const partText = json?.candidates?.[0]?.content?.parts?.[0]?.text;
-            if (partText) {
-              fullOutput += partText;
-              onChunk(partText);
-            }
-          } catch (e) {}
-        }
-      }
     }
-
-    return fullOutput || 'I have analyzed your request based on the active lecture materials.';
+    if (!fullOutput) throw new Error('Pulse AI returned an empty response. Please try again.');
+    return fullOutput;
   }
-
-  // High-Yield Academic Fallback Engine (Guarantees zero downtime / presentation crashes)
-  async function generateAcademicFallback(userPrompt, mode, activeDoc, onChunk) {
-    const promptLower = userPrompt.toLowerCase();
-    let reply = '';
-
-    if (mode === 'lecture') {
-      if (promptLower.includes('scrum') || promptLower.includes('agile') || promptLower.includes('sprint')) {
-        reply = `Based directly on **${activeDoc?.title || 'the lecture slides'}**:\n\n` +
-          `- **Sprint Backlog Ownership** [Slide 5]: The Developers exclusively own the Sprint Backlog. Scope cannot be modified during the sprint if it compromises the Sprint Goal.\n` +
-          `- **User Story Format** [Slide 3]: Stories follow \`As a [user], I want [feature], so that [benefit]\`.\n` +
-          `- **Estimation Sequence** [Slide 4]: Sizing is performed using the modified Fibonacci sequence (1, 2, 3, 5, 8, 13) during Planning Poker to reflect increasing uncertainty at scale.\n` +
-          `- **Continuous Quality** [Slide 7]: Deliverables must satisfy the Definition of Done (DoD) before being declared an increment.`;
-      } else if (promptLower.includes('tree') || promptLower.includes('graph') || promptLower.includes('math')) {
-        reply = `From **${activeDoc?.title || 'Discrete Mathematics'}**:\n\n` +
-          `- **Tree Definition** [Slide 3]: An undirected connected graph containing zero cycles. A tree with $n$ vertices always contains exactly $n - 1$ edges.\n` +
-          `- **Spanning Trees** [Slide 4]: Prim's algorithm maintains a growing tree and adds the minimum-weight adjacent edge.\n` +
-          `- **Kruskal's Algorithm** [Slide 5]: Greedily selects lowest weight edges across the entire graph without forming cycles using Disjoint Set Union (DSU).`;
-      } else {
-        reply = `According to **${activeDoc?.title || 'the current lecture document'}** [Slide 1-4]:\n\n` +
-          `The core principle discussed emphasizes systematic breakdown of complex requirements into iterative increments. Key deliverables include prioritized backlogs, verified unit test suites, and stakeholder feedback reviews.`;
-      }
-    } else if (mode === 'combined') {
-      reply = `**Lecture Grounding** [Slide 3]:\n` +
-        `Your lecture notes define this as an essential building block for scalable software architecture.\n\n` +
-        `**Industry & Practical Expansion**:\n` +
-        `In production systems (e.g. Spotify, Google, Netflix), teams pair this approach with Continuous Delivery (CI/CD) pipelines. This ensures that every increment passing the Definition of Done is automatically tested and staged for seamless deployment without manual bottlenecks.`;
-    } else {
-      // General Tutor Mode
-      reply = `### Conceptual Breakdown\n\n` +
-        `Think of **${userPrompt}** like building an aircraft engine:\n\n` +
-        `1. **Modularity**: Each component (combustion chamber, fan blades) can be tested in isolation before final assembly.\n` +
-        `2. **Feedback Loops**: Constant telemetry sensors detect anomalies early, preventing catastrophic system failure.\n\n` +
-        `💡 **High-Yield Exam Tip**: Always identify the difference between *verification* (Did we build the system right?) and *validation* (Did we build the right system?).\n\n` +
-        `*Quick self-check: Can you name one risk of increasing sprint length from 2 weeks to 8 weeks?*`;
-    }
-
-    // Stream out words with realistic typing delay
-    const tokens = reply.split(' ');
-    let output = '';
-    for (let i = 0; i < tokens.length; i++) {
-      const piece = (i === 0 ? '' : ' ') + tokens[i];
-      output += piece;
-      onChunk(piece);
-      await new Promise(r => setTimeout(r, 18));
-    }
-    return output;
-  }
-
   // -------------------------------------------------------------
   // DOCUMENT LIBRARY & OUTLINE
   // -------------------------------------------------------------
@@ -606,43 +436,26 @@ Lecture Notes:\n${docContext}`;
     }
   }
 
-  function handleFileUpload(file) {
+  async function handleFileUpload(file) {
     if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = function (e) {
-      const content = e.target.result;
-      const title = file.name.replace(/\.[^/.]+$/, '');
-      const newDoc = {
-        id: 'doc_' + Date.now(),
-        userId: getCurrentUserId(),
-        title: title,
-        courseId: state.activeCourseId !== 'all' ? state.activeCourseId : 'c1',
-        fileName: file.name,
-        slideCount: typeof content === 'string' ? ((content.match(/\[Slide \d+\]/gi) || []).length || 6) : 6,
-        uploadedAt: new Date().toISOString(),
-        text: typeof content === 'string' && content.length > 20 ? content :
-          `[Slide 1] Introduction to ${title}\n` +
-          `[Slide 2] Core Principles and Fundamental Frameworks\n` +
-          `[Slide 3] Key Processes and Methodological Lifecycles\n` +
-          `[Slide 4] Architecture, Component Modeling, and Data Flow\n` +
-          `[Slide 5] Evaluation Metrics, DoD, and Testing Strategies\n` +
-          `[Slide 6] Examination Review & High-Yield Summary`
-      };
-
-      state.documents.unshift(newDoc);
-      state.activeDocId = newDoc.id;
+    const form = new FormData();
+    form.append('file', file);
+    form.append('courseId', state.activeCourseId !== 'all' ? state.activeCourseId : 'general');
+    try {
+      const response = await fetch('/api/ai/upload', { method: 'POST', body: form });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(result.error || `Upload failed (${response.status}).`);
+      const doc = result.document;
+      state.documents.unshift({ ...doc, id: doc.id, serverDocumentId: doc.id, userId: getCurrentUserId() });
+      state.activeDocId = doc.id;
       saveDocuments();
       renderDocumentsList();
-      if (window.FocusPulseUtils && window.FocusPulseUtils.showToast) {
-        window.FocusPulseUtils.showToast(`Uploaded "${file.name}" to Lecture Library`, 'success');
-      }
-    };
-
-    if (file.name.endsWith('.txt') || file.name.endsWith('.md') || file.name.endsWith('.json')) {
-      reader.readAsText(file);
-    } else {
-      reader.readAsArrayBuffer(file);
+      window.FocusPulseUtils?.showToast?.(`Added “${file.name}” to your lecture library.`, 'success');
+    } catch (error) {
+      window.FocusPulseUtils?.showToast?.(error.message || 'Could not upload this document.', 'error');
+    } finally {
+      const input = document.getElementById('pulseFileInput');
+      if (input) input.value = '';
     }
   }
 
@@ -652,54 +465,31 @@ Lecture Notes:\n${docContext}`;
   function renderSummary(type = 'quick') {
     const display = document.getElementById('pulseSummaryDisplay');
     if (!display) return;
-
     const activeDoc = state.documents.find(d => d.id === state.activeDocId);
-    const title = activeDoc ? activeDoc.title : 'Selected Material';
-
-    let content = '';
-    if (type === 'quick') {
-      content = `### ⚡ Quick Overview: ${title}\n\n` +
-        `- **Core Objective**: Master sprint commitment and progressive refinement of requirements.\n` +
-        `- **Single Source of Truth**: The Product Backlog is ordered by the Product Owner [Slide 2].\n` +
-        `- **Developer Autonomy**: The engineering team strictly owns sprint execution and task decomposition [Slide 5].\n` +
-        `- **Relative Sizing**: Planning Poker utilizes Fibonacci sequences to mitigate risk and uncertainty [Slide 4].\n` +
-        `- **Quality Gates**: Work is only considered done once meeting the formal Definition of Done (DoD) [Slide 7].`;
-    } else if (type === 'detailed') {
-      content = `### 📋 Comprehensive Lecture Notes: ${title}\n\n` +
-        `#### 1. Backlog Refinement & Epics\n` +
-        `An Epic encompasses larger project capabilities. During refinement, items are broken down into small, independently testable User Stories.\n\n` +
-        `#### 2. Sprint Ceremonies & Timeboxing\n` +
-        `Key events include Sprint Planning, Daily Scrum (15-min timebox), Sprint Review (demonstration to stakeholders), and Sprint Retrospective (team process improvements).\n\n` +
-        `#### 3. Continuous Integration & Done Criteria\n` +
-        `Code reviews, automated unit tests, and regression testing must be passed before merging into the main branch.`;
-    } else if (type === 'exam') {
-      content = `### 🎯 High-Yield Exam Cheat Sheet: ${title}\n\n` +
-        `| Concept | Exam Definition | Key Formula / Rule |\n` +
-        `| :--- | :--- | :--- |\n` +
-        `| **Sprint Goal** | Shared objective that cannot be changed during sprint | Non-negotiable commitment |\n` +
-        `| **Tree Edge Count** | Undirected graph with zero cycles | $E = V - 1$ |\n` +
-        `| **DoD vs Acceptance Criteria** | DoD is system-wide; AC is story-specific | Both required for release |\n` +
-        `| **Velocity** | Story points completed per sprint | Used for forecasting, NOT productivity ranking |`;
-    } else {
-      content = `### 📑 Section-by-Section Breakdown\n\n` +
-        `- **[Slide 1]**: Course orientation and module learning objectives.\n` +
-        `- **[Slide 2]**: Product backlog curation and priority matrices.\n` +
-        `- **[Slide 3]**: User story persona definition and INVEST criteria.\n` +
-        `- **[Slide 4]**: Estimation poker, velocity calculations, and sprint sizing.\n` +
-        `- **[Slide 5]**: Sprint backlog ownership and developer autonomy.\n` +
-        `- **[Slide 6]**: Daily synchronization standup guidelines.\n` +
-        `- **[Slide 7]**: Definition of Done (DoD) checklist items.\n` +
-        `- **[Slide 8]**: Retrospective techniques (Start/Stop/Continue).`;
+    if (!activeDoc) {
+      display.textContent = 'Add a readable lecture text file to create study materials grounded in your own course content.';
+      return;
     }
-
-    display.innerHTML = formatMarkdown(content);
+    display.textContent = 'Preparing study notes from this document…';
+    fetch('/api/ai/generate', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ type: 'summary', summaryType: type, documentId: activeDoc.serverDocumentId || activeDoc.id }) })
+      .then(async response => { const result = await response.json().catch(() => ({})); if (!response.ok) throw new Error(result.error || `Request failed (${response.status}).`); return result; })
+      .then(result => { display.innerHTML = formatMarkdown(result.content || 'The service returned no summary.'); })
+      .catch(error => { display.textContent = `Study material generation is unavailable: ${error.message}`; });
   }
 
   // -------------------------------------------------------------
   // 3D FLIP FLASHCARDS RUNNER
   // -------------------------------------------------------------
   function renderFlashcard() {
-    if (!state.flashcards.length) return;
+    if (!state.flashcards.length) {
+      const front = document.getElementById('pulseCardFrontText');
+      if (front) front.textContent = 'Generate flashcards from your selected lecture.';
+      const back = document.getElementById('pulseCardBackText');
+      if (back) back.textContent = 'Generated answers will appear here.';
+      const count = document.getElementById('pulseCardCounter');
+      if (count) count.textContent = '0 cards';
+      return;
+    }
     const card = state.flashcards[state.currentCardIndex];
     if (!card) return;
 
@@ -762,7 +552,15 @@ Lecture Notes:\n${docContext}`;
   // PRACTICE QUIZ RUNNER
   // -------------------------------------------------------------
   function renderQuiz() {
-    if (!state.quizQuestions.length) return;
+    if (!state.quizQuestions.length) {
+      const question = document.getElementById('pulseQuizQuestion');
+      if (question) question.textContent = 'Generate a quiz from your selected lecture to begin.';
+      const options = document.getElementById('pulseQuizOptions');
+      if (options) options.innerHTML = '';
+      const meta = document.getElementById('pulseQuizMeta');
+      if (meta) meta.textContent = 'No quiz generated';
+      return;
+    }
     const q = state.quizQuestions[state.currentQuizIndex];
     if (!q) return;
 
@@ -813,7 +611,7 @@ Lecture Notes:\n${docContext}`;
     if (feedbackEl) {
       feedbackEl.style.display = 'block';
       feedbackEl.innerHTML = `
-        <div style="font-weight:700; color:${isCorrect ? '#22c55e' : '#ef4444'}; margin-bottom:0.25rem;">
+        <div style="font-weight:700; color:${isCorrect ? 'var(--color-primary)' : 'var(--color-text-secondary)'}; margin-bottom:0.25rem;">
           ${isCorrect ? '✓ Correct!' : '✗ Not quite.'}
         </div>
         <div>${escapeHtml(q.explanation)} <span class="pulse-citation-tag">${escapeHtml(q.citation || 'Slide Reference')}</span></div>
@@ -848,7 +646,7 @@ Lecture Notes:\n${docContext}`;
       feedbackEl.style.display = 'block';
       const pct = Math.round((state.quizScore / state.quizQuestions.length) * 100);
       feedbackEl.innerHTML = `
-        <div style="font-size:1.1rem; font-weight:700; color:var(--accent-cyan); margin-bottom:0.5rem;">
+        <div style="font-size:1.1rem; font-weight:700; color:var(--color-primary); margin-bottom:0.5rem;">
           Mastery Level: ${pct}%
         </div>
         <p>Great practice session! You can retake this quiz or start a Focus Reactor session to anchor your knowledge.</p>
@@ -998,6 +796,8 @@ Lecture Notes:\n${docContext}`;
     document.getElementById('btnNextCard')?.addEventListener('click', nextFlashcard);
     document.getElementById('btnPrevCard')?.addEventListener('click', prevFlashcard);
     document.getElementById('btnMarkMastered')?.addEventListener('click', toggleMastered);
+    document.getElementById('btnGenerateFlashcards')?.addEventListener('click', () => generateStudyTool('flashcards'));
+    document.getElementById('btnGenerateQuiz')?.addEventListener('click', () => generateStudyTool('quiz'));
 
     // Toggle Intel Panel (Mobile/Tablet)
     document.getElementById('btnToggleIntel')?.addEventListener('click', () => {
@@ -1037,8 +837,8 @@ Lecture Notes:\n${docContext}`;
     out = out.replace(/\*([^*]+)\*/g, '<em>$1</em>');
 
     // Headers ### Header
-    out = out.replace(/^### (.*$)/gim, '<h4 style="margin:0.75rem 0 0.35rem; color:var(--accent-violet-light); font-size:1rem;">$1</h4>');
-    out = out.replace(/^## (.*$)/gim, '<h3 style="margin:0.85rem 0 0.4rem; color:var(--accent-cyan); font-size:1.1rem;">$1</h3>');
+    out = out.replace(/^### (.*$)/gim, '<h4 style="margin:0.75rem 0 0.35rem; color:var(--color-primary); font-size:1rem;">$1</h4>');
+    out = out.replace(/^## (.*$)/gim, '<h3 style="margin:0.85rem 0 0.4rem; color:var(--color-primary); font-size:1.1rem;">$1</h3>');
 
     // Citations [Slide X] or [Sec Y]
     out = out.replace(/\[(Slide \d+|Sec(?:tion)? [\d.]+)\]/gi, '<span class="pulse-citation-tag">$1</span>');

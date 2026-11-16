@@ -3,13 +3,14 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Focus Reactor - FocusPulse</title>
+  <title>Focus Timer · FocusPulse</title>
   <!-- Anti-Flash Theme Script -->
   <script>
     (function() {
       try {
         const p = localStorage.getItem('focuspulse_preferences');
-        const theme = p ? JSON.parse(p).theme || 'dark' : 'dark';
+        const savedTheme = p ? JSON.parse(p).theme : null;
+        const theme = savedTheme && savedTheme !== 'system' ? savedTheme : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', theme);
       } catch (e) {}
     })();
@@ -18,6 +19,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/timer.css">
   <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/sage-paper.css">
 </head>
 <body>
 
@@ -101,9 +103,9 @@
 
       <div class="sidebar-footer">
         <a href="profile.html" class="user-snippet">
-          <div class="user-avatar">BR</div>
+          <div class="user-avatar">ST</div>
           <div class="user-info">
-            <div class="user-name">Bavly Romany</div>
+            <div class="user-name">Student</div>
             <div class="user-role">Student</div>
           </div>
         </a>
@@ -121,13 +123,13 @@
           <button class="sidebar-toggle-btn">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
           </button>
-          <div style="font-weight: 600; font-size: 1.05rem;">Focus Reactor Core</div>
+          <div style="font-weight: 600; font-size: 1.05rem;">Focus Timer</div>
         </div>
 
         <div class="top-navbar-right">
           <div class="streak-pill-top">
             <span>🔥</span>
-            <span id="topbarStreakCount">3d</span>
+            <span id="topbarStreakCount">0d</span>
           </div>
 
           <button class="theme-toggle-btn" title="Toggle Theme">
@@ -136,150 +138,39 @@
         </div>
       </header>
 
-      <!-- Reactor Page Body -->
       <div class="page-body">
-        <div class="reactor-page-container">
-
-          <!-- Top Reactor Configuration Bar -->
-          <div class="reactor-top-bar">
-            <div class="reactor-course-selector">
-              <label for="reactorCourseSelect" style="font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); white-space: nowrap;">
-                Linked Course (S02):
-              </label>
-              <select id="reactorCourseSelect" class="reactor-course-select">
-                <!-- Populated dynamically -->
-              </select>
-            </div>
-
-            <div class="reactor-mode-tabs">
-              <button id="focusModeBtn" class="reactor-mode-btn active" data-mode="focus">Pomodoro (25m)</button>
-              <button id="breakModeBtn" class="reactor-mode-btn" data-mode="break">Break (5m)</button>
-            </div>
-          </div>
-
-          <!-- THE FOCUS REACTOR STAGE -->
-          <div id="reactorStage" class="reactor-stage state-idle">
-            <!-- Background Radiation Glow -->
-            <div class="reactor-radiation-glow"></div>
-
-            <!-- SVG Concentric Progress Ring & Gradients -->
-            <svg class="reactor-svg-rings" viewBox="0 0 440 440">
-              <defs>
-                <!-- Standard Focus Gradient (Violet to Cyan) -->
-                <linearGradient id="reactorProgressGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#8b5cf6" />
-                  <stop offset="50%" stop-color="#a855f7" />
-                  <stop offset="100%" stop-color="#06b6d4" />
-                </linearGradient>
-
-                <!-- Final Minute Warm Golden Gradient -->
-                <linearGradient id="reactorGoldenGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#f59e0b" />
-                  <stop offset="100%" stop-color="#fef08a" />
-                </linearGradient>
-
-                <!-- Recovery Break Gradient (Mint to Cyan) -->
-                <linearGradient id="reactorRecoveryGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stop-color="#10b981" />
-                  <stop offset="100%" stop-color="#06b6d4" />
-                </linearGradient>
-              </defs>
-
-              <!-- Track Ring -->
-              <circle class="ring-track" cx="220" cy="220" r="190" />
-
-              <!-- Animated Progress Ring -->
-              <circle id="reactorProgressRing" class="ring-progress" cx="220" cy="220" r="190" />
-            </svg>
-
-            <!-- Outer Dashed Orbital Ring -->
-            <div class="orbital-ring orbital-ring-outer"></div>
-
-            <!-- Mid Multi-colored Orbital Ring -->
-            <div class="orbital-ring orbital-ring-mid"></div>
-
-            <!-- Inner Dotted Orbital Ring -->
-            <div class="orbital-ring orbital-ring-inner"></div>
-
-            <!-- Central Breathing Energy Core -->
-            <div class="reactor-core">
-              <div class="reactor-pulse-disc"></div>
-
-              <div class="reactor-status-tag">
-                <span class="reactor-status-dot"></span>
-                <span id="reactorStatusText">REACTOR READY</span>
+        <section class="stopwatch-page" aria-labelledby="timerPageTitle">
+          <header class="stopwatch-heading"><h1 id="timerPageTitle">A little time, well spent.</h1><p>Settle into one clear task. Your focus session is saved as you go. <span class="item-meta">Shortcut: Alt + Shift + S</span></p></header>
+          <div class="stopwatch-layout">
+            <section id="reactorStage" class="stopwatch-card state-idle" aria-live="polite">
+              <div class="stopwatch-modes" role="group" aria-label="Timer mode">
+                <button id="focusModeBtn" class="reactor-mode-btn active" data-mode="focus" type="button">Focus · 25 min</button>
+                <button id="breakModeBtn" class="reactor-mode-btn" data-mode="break" type="button">Short break · 5 min</button>
+                <button id="longBreakModeBtn" class="reactor-mode-btn" data-mode="long-break" type="button">Long break · 15 min</button>
               </div>
-
-              <!-- Main Countdown Display -->
-              <div id="reactorCountdown" class="reactor-countdown">25:00</div>
-
-              <div class="reactor-duration-control" aria-label="Timer duration controls">
-                <button id="btnDecreaseDuration" class="reactor-duration-btn" type="button" title="Decrease duration" aria-label="Decrease duration">−</button>
-                <span><strong id="reactorDurationValue">25</strong> min</span>
-                <button id="btnIncreaseDuration" class="reactor-duration-btn" type="button" title="Increase duration" aria-label="Increase duration">+</button>
+              <p id="reactorStatusText" class="stopwatch-state">Ready when you are</p>
+              <div id="reactorCountdown" class="stopwatch-time" role="timer" aria-label="Time remaining">25:00</div>
+              <div class="stopwatch-meter" role="progressbar" aria-label="Session progress" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><div id="reactorProgressBar" class="stopwatch-meter-fill"></div></div>
+              <div id="reactorSessionLabel" class="item-meta">Choose a course or study independently</div>
+              <div class="stopwatch-duration" aria-label="Adjust timer duration"><button id="btnDecreaseDuration" type="button" aria-label="Decrease duration">−</button><span><strong id="reactorDurationValue">25</strong> minutes</span><button id="btnIncreaseDuration" type="button" aria-label="Increase duration">+</button><button id="btnResetTimer" class="icon-btn" type="button">Reset timer</button></div>
+              <div class="stopwatch-objective"><label for="timerObjective">What are you working on?</label><input id="timerObjective" type="text" maxlength="120" placeholder="e.g. Review lecture notes for week 4"></div>
+              <div class="reactor-controls stopwatch-controls">
+                <button id="btnStartReactor" class="btn btn-primary btn-lg" type="button">Start session</button>
+                <button id="btnPauseReactor" class="btn btn-secondary btn-lg" type="button" style="display:none">Pause</button>
+                <button id="btnResumeReactor" class="btn btn-primary btn-lg" type="button" style="display:none">Resume</button>
+                <button id="btnCancelReactor" class="btn btn-secondary btn-lg" type="button" style="display:none">End session</button>
+                <button id="btnSkipBreak" class="btn btn-secondary btn-lg" type="button" style="display:none">Finish break</button>
               </div>
-
-              <div id="reactorSessionLabel" class="reactor-session-label">
-                Agile Software Engineering
-              </div>
-            </div>
+              <div id="timerBreakNote" class="stopwatch-break-note" hidden><p id="timerBreakSuggestion">Your focus session is complete. Take a moment to reset before your next study block.</p><div class="stopwatch-completion-actions"><button id="btnStartBreakFromComplete" class="btn btn-secondary btn-sm" type="button">Start a short break</button><button id="btnStartLongBreakFromComplete" class="btn btn-secondary btn-sm" type="button">Take a long break</button><button id="btnNextFocusSession" class="btn btn-ghost btn-sm" type="button">Start another focus session</button></div></div>
+            </section>
+            <aside class="stopwatch-side">
+              <section class="card"><label for="reactorCourseSelect">Study course</label><select id="reactorCourseSelect" class="stopwatch-course"><option value="">Independent study</option></select></section>
+              <section class="card"><button id="btnToggleDeepFocus" class="btn btn-secondary" type="button">Enter distraction-free mode</button><button id="btnToggleReactorSound" class="btn btn-ghost btn-sm active" type="button" style="margin-top:.5rem">Completion chime on</button></section>
+              <section class="card"><button id="btnQuickDistraction" class="btn btn-ghost btn-sm" type="button">Jot down a distraction</button></section>
+              <div class="stopwatch-summary"><section class="card"><strong id="stopwatchSessions">0</strong><span>sessions today</span></section><section class="card"><strong id="stopwatchGoal">0 / 4</strong><span>daily goal</span></section></div>
+            </aside>
           </div>
-
-          <!-- Reactor Controls Panel -->
-          <div class="reactor-controls">
-            <!-- Start Button -->
-            <button id="btnStartReactor" class="btn btn-reactor-start">
-              <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span>IGNITE REACTOR</span>
-            </button>
-
-            <!-- Pause Button -->
-            <button id="btnPauseReactor" class="btn btn-secondary btn-lg" style="display: none;">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>
-              <span>Pause</span>
-            </button>
-
-            <!-- Resume Button -->
-            <button id="btnResumeReactor" class="btn btn-cyan btn-lg" style="display: none;">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
-              <span>Resume</span>
-            </button>
-
-            <!-- Cancel Button (S04) -->
-            <button id="btnCancelReactor" class="btn btn-danger btn-lg" style="display: none;">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-              <span>Cancel Session</span>
-            </button>
-
-            <!-- Skip Break Button (S07) -->
-            <button id="btnSkipBreak" class="btn btn-secondary btn-lg" style="display: none;">
-              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line></svg>
-              <span>Skip Break</span>
-            </button>
-          </div>
-
-          <!-- Auxiliary Reactor Options -->
-          <div class="reactor-aux-controls">
-            <!-- Deep Focus Mode Toggle -->
-            <button id="btnToggleDeepFocus" class="btn btn-secondary btn-sm" title="Immersive Fullscreen">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
-              <span>Deep Focus Mode</span>
-            </button>
-
-            <!-- Sound Toggle (Web Audio API) -->
-            <button id="btnToggleReactorSound" class="btn btn-secondary btn-sm active" title="Audio Chimes">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-              <span>Audio Chimes</span>
-            </button>
-
-            <!-- Distraction Quick Log (S19) -->
-            <button id="btnQuickDistraction" class="btn btn-secondary btn-sm" title="Log Distraction">
-              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
-              <span>Log Distraction (S19)</span>
-            </button>
-          </div>
-
-        </div>
+        </section>
       </div>
     </main>
   </div>

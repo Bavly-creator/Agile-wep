@@ -18,19 +18,20 @@ const Courses = {
   },
 
   getById(id) {
+    const user = Storage.getCurrentUser();
     const courses = Storage.getData(STORAGE_KEYS.COURSES, []);
-    return courses.find(c => c.id === id);
+    return courses.find(c => c.id === id && c.userId === user?.id);
   },
 
   // Add course with duplicate validation, custom icon, color, description, and weekly target
-  add(name, code, description = '', color = '#8b5cf6', icon = '📚', targetMinutes = 300) {
+  add(name, code, description = '', color = '#244333', icon = '📚', targetMinutes = 300) {
     const user = Storage.getCurrentUser();
     if (!user) return { success: false, message: 'User not logged in.' };
 
     name = (name || '').trim();
     code = (code || '').trim().toUpperCase();
     description = (description || '').trim();
-    color = color || '#8b5cf6';
+    color = color || '#244333';
     icon = icon || '📚';
     targetMinutes = parseInt(targetMinutes, 10) || 300;
 
@@ -71,13 +72,13 @@ const Courses = {
   // Update existing course details
   update(id, data) {
     const allCourses = Storage.getData(STORAGE_KEYS.COURSES, []);
-    const courseIndex = allCourses.findIndex(c => c.id === id);
+    const user = Storage.getCurrentUser();
+    const courseIndex = allCourses.findIndex(c => c.id === id && c.userId === user?.id);
     if (courseIndex === -1) {
       return { success: false, message: 'Course not found.' };
     }
 
     // Check duplicate if name or code changed
-    const user = Storage.getCurrentUser();
     if (data.name || data.code) {
       const duplicate = allCourses.find(c => 
         c.userId === user.id && 
@@ -116,8 +117,9 @@ const Courses = {
 
   // Delete course
   delete(id) {
+    const user = Storage.getCurrentUser();
     let allCourses = Storage.getData(STORAGE_KEYS.COURSES, []);
-    allCourses = allCourses.filter(c => c.id !== id);
+    allCourses = allCourses.filter(c => c.id !== id || c.userId !== user?.id);
     Storage.saveData(STORAGE_KEYS.COURSES, allCourses);
     return { success: true };
   },
@@ -149,8 +151,9 @@ const Courses = {
     const course = this.getById(courseId);
     if (!course) return null;
 
+    const user = Storage.getCurrentUser();
     const sessions = Storage.getData(STORAGE_KEYS.SESSIONS, [])
-      .filter(s => s.courseId === courseId && s.status === 'completed');
+      .filter(s => s.userId === user?.id && s.courseId === courseId && s.status === 'completed');
 
     const totalMinutes = sessions.reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
     const completedSessions = sessions.length;

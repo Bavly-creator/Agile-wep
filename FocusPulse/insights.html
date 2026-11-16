@@ -9,7 +9,8 @@
     (function() {
       try {
         const p = localStorage.getItem('focuspulse_preferences');
-        const theme = p ? JSON.parse(p).theme || 'dark' : 'dark';
+        const savedTheme = p ? JSON.parse(p).theme : null;
+        const theme = savedTheme && savedTheme !== 'system' ? savedTheme : (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
         document.documentElement.setAttribute('data-theme', theme);
       } catch (e) {}
     })();
@@ -18,6 +19,7 @@
   <link rel="stylesheet" href="css/components.css">
   <link rel="stylesheet" href="css/dashboard.css">
   <link rel="stylesheet" href="css/responsive.css">
+  <link rel="stylesheet" href="css/sage-paper.css">
 </head>
 <body>
 
@@ -95,9 +97,9 @@
 
       <div class="sidebar-footer">
         <a href="profile.html" class="user-snippet">
-          <div class="user-avatar">BR</div>
+          <div class="user-avatar">ST</div>
           <div class="user-info">
-            <div class="user-name">Bavly Romany</div>
+            <div class="user-name">Student</div>
             <div class="user-role">Student</div>
           </div>
         </a>
@@ -121,7 +123,7 @@
         <div class="top-navbar-right">
           <div class="streak-pill-top">
             <span>🔥</span>
-            <span id="topbarStreakCount">3d</span>
+            <span id="topbarStreakCount">0d</span>
           </div>
 
           <button class="theme-toggle-btn" title="Toggle Theme">

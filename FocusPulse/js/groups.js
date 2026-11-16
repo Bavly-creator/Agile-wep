@@ -1,7 +1,7 @@
 /**
  * FocusPulse - Study Groups Module
  * Implements S11 (Create Group), S12 (Join with Code), S13 (Group Weekly Total).
- * Browser-side demonstration with simulated collaborative peer contributions.
+ * Local study-group records. Group activity is calculated from locally recorded sessions.
  */
 
 const Groups = {
@@ -16,7 +16,8 @@ const Groups = {
 
   getGroupById(groupId) {
     const allGroups = Storage.getData(STORAGE_KEYS.GROUPS, []);
-    return allGroups.find(g => g.id === groupId);
+    const group = allGroups.find(g => g.id === groupId);
+    return group ? { ...group, members: (group.members || []).filter(member => !String(member.id).startsWith('sim_')) } : null;
   },
 
   // S11: Create a study group with unique code
@@ -47,10 +48,7 @@ const Groups = {
           name: user.name,
           role: 'Team Lead / Creator',
           weeklyMinutes: 0
-        },
-        // Seed 2 simulated team members to demonstrate collaborative leaderboard immediately
-        { id: 'sim_1', name: 'Nicole Aziz', role: 'Scrum Master', weeklyMinutes: 240 },
-        { id: 'sim_2', name: 'Mina Ehab', role: 'Developer', weeklyMinutes: 210 }
+        }
       ]
     };
 
@@ -107,24 +105,13 @@ const Groups = {
     const group = this.getGroupById(groupId);
     if (!group) return null;
 
-    const user = Storage.getCurrentUser();
     const weekDates = Utils.getCurrentWeekDates();
     const sessions = Storage.getData(STORAGE_KEYS.SESSIONS, []);
 
-    // Calculate active user's actual weekly minutes
-    let userWeeklyMinutes = 0;
-    if (user) {
-      userWeeklyMinutes = sessions
-        .filter(s => s.userId === user.id && weekDates.includes(s.dateStr) && s.status === 'completed')
-        .reduce((sum, s) => sum + (s.durationMinutes || 0), 0);
-    }
-
-    // Synchronize current user's minutes in the group members list
-    const updatedMembers = group.members.map(m => {
-      if (user && m.id === user.id) {
-        return { ...m, weeklyMinutes: userWeeklyMinutes };
-      }
-      return m;
+    // Derive each locally available member's contribution from real focus sessions.
+    const updatedMembers = (group.members || []).filter(member => !String(member.id).startsWith('sim_')).map(member => {
+      const weeklyMinutes = sessions.filter(session => session.userId === member.id && weekDates.includes(session.dateStr) && session.status === 'completed').reduce((sum, session) => sum + (session.durationMinutes || 0), 0);
+      return { ...member, weeklyMinutes };
     });
 
     const totalMinutes = updatedMembers.reduce((sum, m) => sum + (m.weeklyMinutes || 0), 0);

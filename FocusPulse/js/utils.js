@@ -22,9 +22,34 @@ const Utils = {
     return this.audioCtx;
   },
 
+  soundAllowed(effect) {
+    const prefs = Storage?.getData?.(STORAGE_KEYS.PREFERENCES, {}) || {};
+    return prefs.soundEnabled !== false && prefs[`${effect}Sound`] !== false;
+  },
+
+  routeSound(gain, ctx) {
+    const prefs = Storage?.getData?.(STORAGE_KEYS.PREFERENCES, {}) || {};
+    const master = ctx.createGain();
+    master.gain.value = Math.max(0, Math.min(1, Number(prefs.masterVolume ?? 0.3)));
+    gain.connect(master);
+    master.connect(ctx.destination);
+  },
+
+  playControlSound(effect = 'pause') {
+    try {
+      if (!this.soundAllowed(effect)) return;
+      const ctx = this.getAudioContext(); if (!ctx) return;
+      const osc = ctx.createOscillator(), gain = ctx.createGain(), now = ctx.currentTime;
+      osc.type = 'sine'; osc.frequency.setValueAtTime(effect === 'resume' ? 440 : 330, now);
+      gain.gain.setValueAtTime(.001, now); gain.gain.linearRampToValueAtTime(.07, now + .025); gain.gain.exponentialRampToValueAtTime(.001, now + .16);
+      osc.connect(gain); this.routeSound(gain, ctx); osc.start(now); osc.stop(now + .17);
+    } catch (e) { console.warn('Control sound unavailable:', e); }
+  },
+
   // Futuristic power-up ramp
   playActivationSound() {
     try {
+      if (!this.soundAllowed('start')) return;
       const ctx = this.getAudioContext();
       if (!ctx) return;
       const osc = ctx.createOscillator();
@@ -40,7 +65,7 @@ const Utils = {
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.45);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      this.routeSound(gain, ctx);
 
       osc.start(now);
       osc.stop(now + 0.45);
@@ -50,8 +75,9 @@ const Utils = {
   },
 
   // Triumphant double-chime / arpeggio chord
-  playCompletionSound() {
+  playCompletionSound(effect = 'complete') {
     try {
+      if (!this.soundAllowed(effect)) return;
       const ctx = this.getAudioContext();
       if (!ctx) return;
 
@@ -69,7 +95,7 @@ const Utils = {
         gain.gain.exponentialRampToValueAtTime(0.0001, startTime + 0.8);
 
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        this.routeSound(gain, ctx);
 
         osc.start(startTime);
         osc.stop(startTime + 0.85);
@@ -82,6 +108,7 @@ const Utils = {
   // Gentle recovery break bell
   playBreakSound() {
     try {
+      if (!this.soundAllowed('break')) return;
       const ctx = this.getAudioContext();
       if (!ctx) return;
       const osc = ctx.createOscillator();
@@ -97,13 +124,17 @@ const Utils = {
       gain.gain.exponentialRampToValueAtTime(0.001, now + 0.9);
 
       osc.connect(gain);
-      gain.connect(ctx.destination);
+      this.routeSound(gain, ctx);
 
       osc.start(now);
       osc.stop(now + 0.9);
     } catch (e) {
       console.warn('Audio playback error:', e);
     }
+  },
+
+  playGoalSound() {
+    this.playCompletionSound('goal');
   },
 
   // --------------------------------------------------------------------------

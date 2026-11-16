@@ -1,132 +1,109 @@
-/**
- * FocusPulse - Authentication Module
- * Implements S01 (Register & Log In), S10 (Log Out), and S15 (Password Reset).
- * Protects routes and manages active user session state.
- */
-
+/** FocusPulse guest entry and server-backed account authentication. */
 const Auth = {
-  // Check if a user is currently logged in
-  isLoggedIn() {
-    return Storage.getCurrentUser() !== null;
+  apiBase: '/api/auth',
+
+  isLoggedIn() { return Boolean(Storage.getCurrentUser()); },
+
+  async requireAuth() {
+    const user = Storage.getCurrentUser();
+    if (user?.isGuest) return true;
+    if (user && !user.isGuest) {
+      const result = await this.request('/me', { method: 'GET' });
+      if (result.success && result.user) { Storage.setCurrentUser(result.user); return true; }
+      Storage.clearUserSession();
+    }
+    window.location.replace('index.html');
+    return false;
   },
 
-  // Guard to ensure protected pages are accessed only by authenticated users
-  requireAuth() {
-    if (!this.isLoggedIn()) {
-      window.location.href = 'login.html';
-      return false;
-    }
-    return true;
-  },
-
-  // Redirect to dashboard if already logged in (used on login / register pages)
-  redirectIfAuth() {
-    if (this.isLoggedIn()) {
-      window.location.href = 'dashboard.html';
+  async redirectIfAuth() {
+    const user = Storage.getCurrentUser();
+    if (user?.isGuest) { window.location.replace('dashboard.html'); return; }
+    if (user && !user.isGuest) {
+      const result = await this.request('/me', { method: 'GET' });
+      if (result.success && result.user) window.location.replace('dashboard.html');
+      else Storage.clearUserSession();
     }
   },
 
-  // S01: Register new account
-  register(name, email, password) {
-    name = (name || '').trim();
-    email = (email || '').trim().toLowerCase();
-    password = (password || '').trim();
-
-    // Validations
-    if (!name || name.length < 2) {
-      return { success: false, message: 'Please enter your full name.' };
+  async request(path, options = {}) {
+    const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
+    const csrf = document.cookie.split('; ').find(cookie => cookie.startsWith('fp_csrf='))?.split('=').slice(1).join('=');
+    if (csrf) headers['X-CSRF-Token'] = decodeURIComponent(csrf);
+    let response;
+    try {
+      response = await fetch(`${this.apiBase}${path}`, { credentials: 'same-origin', ...options, headers });
+    } catch {
+      return { success: false, message: 'FocusPulse account service is unavailable. You can still continue as a guest.' };
     }
-    if (!email || !email.includes('@') || !email.includes('.')) {
-      return { success: false, message: 'Please enter a valid email address.' };
-    }
-    if (!password || password.length < 6) {
-      return { success: false, message: 'Password must be at least 6 characters long.' };
-    }
-
-    const users = Storage.getData(STORAGE_KEYS.USERS, []);
-
-    // Duplicate email check
-    const existing = users.find(u => u.email === email);
-    if (existing) {
-      return { success: false, message: 'An account with this email already exists.' };
-    }
-
-    // Generate initials for avatar
-    const parts = name.split(' ');
-    const avatar = parts.length > 1 ? (parts[0][0] + parts[1][0]).toUpperCase() : name.substring(0, 2).toUpperCase();
-
-    const newUser = {
-      id: 'usr_' + Date.now(),
-      name: name,
-      email: email,
-      password: password, // In production this would be hashed on a secure server
-      role: 'Student',
-      avatar: avatar,
-      createdAt: Utils.getLocalDateString()
-    };
-
-    users.push(newUser);
-    Storage.saveData(STORAGE_KEYS.USERS, users);
-    Storage.setCurrentUser(newUser);
-
-    return { success: true, user: newUser };
+    const result = await response.json().catch(() => ({}));
+    return response.ok ? { success: true, ...result } : { success: false, ...result, message: result.message || 'Something went wrong. Please try again.' };
   },
 
-  // S01: Log in
-  login(email, password) {
-    email = (email || '').trim().toLowerCase();
-    password = (password || '').trim();
-
-    if (!email || !password) {
-      return { success: false, message: 'Please enter both email and password.' };
-    }
-
-    const users = Storage.getData(STORAGE_KEYS.USERS, []);
-    const user = users.find(u => u.email === email && u.password === password);
-
-    if (!user) {
-      return { success: false, message: 'Invalid email or password. Please try again.' };
-    }
-
+  startGuestSession() {
+    const previous = Storage.getCurrentUser();
+    const user = { id: 'guest_local', name: 'Guest Student', role: 'Guest', avatar: 'GS', isGuest: true, createdAt: Utils.getLocalDateString() };
+    const keys = [STORAGE_KEYS.COURSES, STORAGE_KEYS.SESSIONS, STORAGE_KEYS.GROUPS, STORAGE_KEYS.BADGES, STORAGE_KEYS.DISTRACTIONS, STORAGE_KEYS.TASKS, STORAGE_KEYS.PLANNER_EVENTS, STORAGE_KEYS.NOTES, STORAGE_KEYS.EXAMS];
+    keys.forEach(key => {
+      const rows = Storage.getData(key, []);
+      if (!Array.isArray(rows)) return;
+      const migrated = rows.map(row => {
+        if (!row.userId || row.userId === previous?.id || row.userId === 'usr_demo_01') return { ...row, userId: user.id, ...(Array.isArray(row.members) ? { members: row.members.map(member => member.id === previous?.id || member.id === 'usr_demo_01' ? { ...member, id: user.id, name: user.name, role: 'Team Lead / Creator' } : member) } : {}) };
+        return row;
+      });
+      Storage.saveData(key, migrated);
+    });
+    const availability = Storage.getData(STORAGE_KEYS.STUDY_AVAILABILITY, {});
+    if (previous?.id && availability[previous.id]) { availability[user.id] = availability[previous.id]; delete availability[previous.id]; Storage.saveData(STORAGE_KEYS.STUDY_AVAILABILITY, availability); }
+    const oldUsers = Storage.getData(STORAGE_KEYS.USERS, []);
+    if (Array.isArray(oldUsers)) Storage.saveData(STORAGE_KEYS.USERS, oldUsers.map(({ password, ...userRecord }) => userRecord));
     Storage.setCurrentUser(user);
-    return { success: true, user: user };
+    window.location.href = 'dashboard.html';
   },
 
-  // S10: Log out
-  logout() {
+  async register(email, password, confirmPassword) {
+    if (password !== confirmPassword) return { success: false, message: 'The passwords do not match.' };
+    if (password.length < 10 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) {
+      return { success: false, message: 'Use at least 10 characters, including uppercase, lowercase, and a number.' };
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return { success: false, message: 'Enter a valid email address.' };
+    return this.request('/register', { method: 'POST', body: JSON.stringify({ email: email.trim(), password }) });
+  },
+
+  async login(email, password) {
+    const result = await this.request('/login', { method: 'POST', body: JSON.stringify({ email: email.trim(), password }) });
+    if (result.success && result.user) {
+      const previous = Storage.getCurrentUser();
+      if (previous?.isGuest) {
+        [STORAGE_KEYS.COURSES, STORAGE_KEYS.SESSIONS, STORAGE_KEYS.GROUPS, STORAGE_KEYS.BADGES, STORAGE_KEYS.DISTRACTIONS, STORAGE_KEYS.TASKS, STORAGE_KEYS.PLANNER_EVENTS, STORAGE_KEYS.NOTES, STORAGE_KEYS.EXAMS].forEach(key => {
+          const records = Storage.getData(key, []);
+          if (!Array.isArray(records)) return;
+          Storage.saveData(key, records.map(record => record.userId === previous.id ? { ...record, userId: result.user.id, ...(Array.isArray(record.members) ? { members: record.members.map(member => member.id === previous.id ? { ...member, id: result.user.id, name: result.user.name, role: 'Team Lead / Creator' } : member) } : {}) } : record));
+        });
+        const goals = Storage.getData(STORAGE_KEYS.GOALS, {});
+        if (goals[previous.id]) { goals[result.user.id] = goals[previous.id]; delete goals[previous.id]; Storage.saveData(STORAGE_KEYS.GOALS, goals); }
+        const availability = Storage.getData(STORAGE_KEYS.STUDY_AVAILABILITY, {});
+        if (availability[previous.id]) { availability[result.user.id] = availability[previous.id]; delete availability[previous.id]; Storage.saveData(STORAGE_KEYS.STUDY_AVAILABILITY, availability); }
+      }
+      Storage.setCurrentUser(result.user);
+    }
+    return result;
+  },
+
+  async logout() {
+    await this.request('/logout', { method: 'POST', body: '{}' });
     Storage.clearUserSession();
-    window.location.href = 'login.html';
+    window.location.href = 'index.html';
   },
 
-  // S15: Password reset
-  resetPassword(email, newPassword) {
-    email = (email || '').trim().toLowerCase();
-    newPassword = (newPassword || '').trim();
+  async resetPassword(email) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) return { success: false, message: 'Enter a valid email address.' };
+    return this.request('/forgot-password', { method: 'POST', body: JSON.stringify({ email: email.trim() }) });
+  },
 
-    if (!email || !email.includes('@')) {
-      return { success: false, message: 'Please enter a valid email address.' };
-    }
-    if (!newPassword || newPassword.length < 6) {
-      return { success: false, message: 'New password must be at least 6 characters long.' };
-    }
-
-    const users = Storage.getData(STORAGE_KEYS.USERS, []);
-    const userIndex = users.findIndex(u => u.email === email);
-
-    if (userIndex === -1) {
-      return { success: false, message: 'No registered account found with this email.' };
-    }
-
-    users[userIndex].password = newPassword;
-    Storage.saveData(STORAGE_KEYS.USERS, users);
-
-    // If currently logged in as this user, update current session
-    const current = Storage.getCurrentUser();
-    if (current && current.email === email) {
-      current.password = newPassword;
-      Storage.setCurrentUser(current);
-    }
-
-    return { success: true, message: 'Password has been successfully updated.' };
+  async completePasswordReset(token, password, confirmPassword) {
+    if (password !== confirmPassword) return { success: false, message: 'The passwords do not match.' };
+    if (password.length < 10 || !/[a-z]/.test(password) || !/[A-Z]/.test(password) || !/\d/.test(password)) return { success: false, message: 'Use at least 10 characters, including uppercase, lowercase, and a number.' };
+    return this.request('/reset-password', { method: 'POST', body: JSON.stringify({ token, password }) });
   }
 };

@@ -22,10 +22,14 @@ const Timer = {
   autoRefreshTimer: null,
   soundEnabled: true,
   isDeepFocus: false,
+  plannedSessionId: null,
+  launchDurationSeconds: null,
 
   getDurationPreferences() {
-    return Storage.getData(STORAGE_KEYS.PREFERENCES, { focusDuration: 25, breakDuration: 5 });
+    return Storage.getData(STORAGE_KEYS.PREFERENCES, { focusDuration: 25, breakDuration: 5, longBreakDuration: 15 });
   },
+
+  isBreakMode() { return this.mode !== 'focus'; },
 
   adjustDuration(delta) {
     if (!['idle', 'paused'].includes(this.status)) {
@@ -33,10 +37,10 @@ const Timer = {
       return;
     }
     const prefs = this.getDurationPreferences();
-    const key = this.mode === 'break' ? 'breakDuration' : 'focusDuration';
-    const min = this.mode === 'break' ? 1 : 5;
-    const max = this.mode === 'break' ? 30 : 120;
-    const fallback = this.mode === 'break' ? 5 : 25;
+    const key = this.mode === 'long-break' ? 'longBreakDuration' : this.mode === 'break' ? 'breakDuration' : 'focusDuration';
+    const min = this.isBreakMode() ? 1 : 5;
+    const max = this.isBreakMode() ? 60 : 120;
+    const fallback = this.mode === 'long-break' ? 15 : this.mode === 'break' ? 5 : 25;
     const previousDuration = Number(prefs[key] || fallback);
     prefs[key] = Math.min(max, Math.max(min, previousDuration + delta));
     Storage.saveData(STORAGE_KEYS.PREFERENCES, prefs);
@@ -50,14 +54,47 @@ const Timer = {
     }
     this.updateModeLabels(prefs);
     this.updateDisplay();
-    Utils.showToast(`${this.mode === 'break' ? 'Break' : 'Focus'} duration: ${prefs[key]} minutes`, 'info');
+    Utils.showToast(`${this.isBreakMode() ? 'Break' : 'Focus'} duration: ${prefs[key]} minutes`, 'info');
   },
 
   init() {
+    this.soundEnabled = Storage.getData(STORAGE_KEYS.PREFERENCES, {}).soundEnabled !== false;
+    const soundButton = document.getElementById('btnToggleReactorSound');
+    if (soundButton) { soundButton.classList.toggle('active', this.soundEnabled); soundButton.textContent = this.soundEnabled ? 'Completion chime on' : 'Sounds off'; }
     this.bindEvents();
     this.updateModeLabels();
     this.restoreTimerState();
+    this.applyLaunchParameters();
     this.scheduleAutoRefresh();
+  },
+
+  applyLaunchParameters() {
+    if (Storage.getData(STORAGE_KEYS.ACTIVE_TIMER)) return;
+    const params = new URLSearchParams(window.location.search);
+    const duration = Number(params.get('duration'));
+    const objective = params.get('objective');
+    const planned = params.get('planned');
+    const courseId = params.get('course');
+    if (courseId) {
+      const course = window.Courses?.getById(courseId);
+      const select = document.getElementById('reactorCourseSelect');
+      if (course && select) {
+        this.courseId = course.id;
+        this.courseName = course.name;
+        select.value = course.id;
+      }
+    }
+    if (Number.isFinite(duration) && duration >= 5 && duration <= 120) {
+      this.launchDurationSeconds = duration * 60;
+      this.totalDurationSeconds = this.remainingSeconds = this.launchDurationSeconds;
+    }
+    if (objective) {
+      this.objective = objective.slice(0, 120);
+      const input = document.getElementById('timerObjective');
+      if (input) input.value = this.objective;
+    }
+    this.plannedSessionId = planned || null;
+    this.updateDisplay();
   },
 
   scheduleAutoRefresh() {
@@ -73,17 +110,15 @@ const Timer = {
   // 1. Timer Lifecycle & Accurate Date.now() Calculation
   // --------------------------------------------------------------------------
   startFocus(courseId, courseName) {
-    if (!courseId) {
-      Utils.showToast('Please select a course to power up the reactor!', 'warning');
-      return false;
-    }
-
+    if (this.status === 'complete') this.plannedSessionId = null;
     const prefs = Storage.getData(STORAGE_KEYS.PREFERENCES, { focusDuration: 25 });
-    const durationSec = (prefs.focusDuration || 25) * 60;
+    const durationSec = this.launchDurationSeconds || (prefs.focusDuration || 25) * 60;
 
     this.mode = 'focus';
     this.courseId = courseId;
-    this.courseName = courseName;
+    this.courseName = courseName || 'Independent study';
+    this.objective = document.getElementById('timerObjective')?.value.trim() || '';
+    this.launchDurationSeconds = null;
     this.totalDurationSeconds = durationSec;
     this.remainingSeconds = durationSec;
     this.targetEndTime = Date.now() + durationSec * 1000;
@@ -93,6 +128,8 @@ const Timer = {
 
     // Trigger Activation State
     this.setAnimationState('activating');
+    this.updateControls();
+    this.updateDisplay();
     if (this.soundEnabled) Utils.playActivationSound();
 
     setTimeout(() => {
@@ -108,10 +145,10 @@ const Timer = {
   },
 
   startBreak() {
-    const prefs = Storage.getData(STORAGE_KEYS.PREFERENCES, { breakDuration: 5 });
-    const durationSec = (prefs.breakDuration || 5) * 60;
+    const prefs = this.getDurationPreferences();
+    const durationSec = (this.mode === 'long-break' ? (prefs.longBreakDuration || 15) : (prefs.breakDuration || 5)) * 60;
 
-    this.mode = 'break';
+    if (!this.isBreakMode()) this.mode = 'break';
     this.status = 'running';
     this.totalDurationSeconds = durationSec;
     this.remainingSeconds = durationSec;
@@ -123,6 +160,8 @@ const Timer = {
     this.startTickLoop();
     this.persistTimerState();
     this.scheduleAutoRefresh();
+    this.updateDisplay();
+    this.updateControls();
     Utils.showToast('Recovery mode active. Take a deep breath.', 'info');
   },
 
@@ -155,9 +194,13 @@ const Timer = {
 
   pause() {
     if (this.status !== 'running') return;
+    this.remainingSeconds = Math.max(0, Math.round((this.targetEndTime - Date.now()) / 1000));
+    if (this.remainingSeconds <= 0) { this.onTimerComplete(); return; }
     this.status = 'paused';
     clearInterval(this.timerInterval);
+    if (this.soundEnabled) Utils.playControlSound('pause');
     this.persistTimerState();
+    this.updateDisplay();
     this.updateControls();
     Utils.showToast('Focus Reactor paused.', 'info');
   },
@@ -165,10 +208,12 @@ const Timer = {
   resume() {
     if (this.status !== 'paused') return;
     this.status = 'running';
+    if (this.soundEnabled) Utils.playControlSound('resume');
     this.targetEndTime = Date.now() + this.remainingSeconds * 1000;
     this.setAnimationState(this.mode === 'focus' ? (this.remainingSeconds <= 60 ? 'final-minute' : 'focus') : 'recovery');
     this.startTickLoop();
     this.persistTimerState();
+    this.updateDisplay();
     this.updateControls();
     Utils.showToast('Focus Reactor resumed.', 'info');
   },
@@ -183,7 +228,7 @@ const Timer = {
     clearInterval(this.timerInterval);
 
     // Save as interrupted session (0 focus minutes credited)
-    if (this.mode === 'focus' && this.status !== 'idle') {
+    if (!this.isBreakMode() && this.status !== 'idle') {
       const user = Storage.getCurrentUser();
       if (user) {
         const sessions = Storage.getData(STORAGE_KEYS.SESSIONS, []);
@@ -199,6 +244,10 @@ const Timer = {
           notes: `Session cancelled: ${reason}`
         });
         Storage.saveData(STORAGE_KEYS.SESSIONS, sessions);
+        if (window.Goals) {
+          const progress = Goals.getTodayProgress();
+          if (progress.isMet && progress.completed === progress.target && Storage.getData(STORAGE_KEYS.PREFERENCES, {}).goalSound !== false) Utils.playGoalSound();
+        }
       }
       Utils.showToast('Session cancelled. Interrupted sessions do not count toward focus time or streak.', 'warning');
     }
@@ -212,9 +261,29 @@ const Timer = {
     this.resetToIdle();
   },
 
+  resetTimer() {
+    if (['running', 'paused', 'activating'].includes(this.status) && !this.isBreakMode()) {
+      this.cancelPrompt();
+      return;
+    }
+    const selectedMode = this.mode;
+    this.resetToIdle();
+    if (selectedMode !== 'focus') {
+      this.mode = selectedMode;
+      const prefs = this.getDurationPreferences();
+      const duration = selectedMode === 'long-break' ? (prefs.longBreakDuration || 15) : (prefs.breakDuration || 5);
+      this.totalDurationSeconds = this.remainingSeconds = duration * 60;
+      document.querySelectorAll('.reactor-mode-btn').forEach(button => button.classList.toggle('active', button.dataset.mode === selectedMode));
+      this.updateDisplay();
+      this.updateControls();
+    }
+    Utils.showToast('Timer reset to its selected duration.', 'info');
+  },
+
   resetToIdle() {
     this.mode = 'focus';
     this.status = 'idle';
+    this.plannedSessionId = null;
     const prefs = Storage.getData(STORAGE_KEYS.PREFERENCES, { focusDuration: 25 });
     this.totalDurationSeconds = (prefs.focusDuration || 25) * 60;
     this.remainingSeconds = this.totalDurationSeconds;
@@ -232,16 +301,16 @@ const Timer = {
     clearInterval(this.timerInterval);
     Storage.deleteData(STORAGE_KEYS.ACTIVE_TIMER);
 
-    if (this.mode === 'focus') {
+    if (!this.isBreakMode()) {
       this.status = 'complete';
       this.setAnimationState('complete');
       if (this.soundEnabled) Utils.playCompletionSound();
 
       // Record completed 25-minute session
       const user = Storage.getCurrentUser();
+      const durationMins = Math.round(this.totalDurationSeconds / 60);
       if (user) {
         const sessions = Storage.getData(STORAGE_KEYS.SESSIONS, []);
-        const durationMins = Math.round(this.totalDurationSeconds / 60);
         sessions.push({
           id: 'sess_' + Date.now(),
           userId: user.id,
@@ -251,20 +320,24 @@ const Timer = {
           completedAt: new Date().toISOString(),
           dateStr: Utils.getLocalDateString(),
           status: 'completed',
-          notes: 'Standard 25-min Pomodoro Completed'
+          notes: this.objective || 'Focus session completed',
+          plannedSessionId: this.plannedSessionId || null
         });
         Storage.saveData(STORAGE_KEYS.SESSIONS, sessions);
+        if (this.plannedSessionId) {
+          const events = Storage.getUserItems(STORAGE_KEYS.PLANNER_EVENTS);
+          const planned = events.find(item => item.id === this.plannedSessionId);
+          if (planned) { planned.status = 'completed'; planned.actualDurationMinutes = durationMins; planned.completedSessionId = sessions[sessions.length - 1].id; Storage.saveUserItems(STORAGE_KEYS.PLANNER_EVENTS, events); }
+        }
 
         // Check and evaluate badges automatically
         if (window.Badges) Badges.evaluate(user.id);
       }
 
-      Utils.showToast('Reactor Overcharged! 25 min Focus Completed!', 'success');
+      Utils.showToast(`Focus session complete · ${durationMins} minutes`, 'success');
 
-      // Auto-transition to 5-minute break
-      setTimeout(() => {
-        this.startBreak();
-      }, 2500);
+      this.updateDisplay();
+      this.updateControls();
     } else {
       // Break complete
       if (this.soundEnabled) Utils.playBreakSound();
@@ -280,47 +353,76 @@ const Timer = {
     const timeEl = document.getElementById('reactorCountdown');
     const labelEl = document.getElementById('reactorSessionLabel');
     const statusTextEl = document.getElementById('reactorStatusText');
-    const progressRing = document.getElementById('reactorProgressRing');
     const durationValue = document.getElementById('reactorDurationValue');
 
     if (timeEl) {
-      timeEl.textContent = Utils.formatTime(this.remainingSeconds);
+      const nextTime = Utils.formatTime(this.remainingSeconds);
+      if (timeEl.textContent !== nextTime) {
+        timeEl.textContent = nextTime;
+        const reduceMotion = document.documentElement.dataset.motion === 'off' || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+        if (!reduceMotion && typeof timeEl.animate === 'function') {
+          timeEl.animate([{ opacity: .82, transform: 'translateY(2px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 150, easing: 'ease-out' });
+        }
+      }
     }
     if (durationValue) durationValue.textContent = Math.round(this.totalDurationSeconds / 60);
 
     if (labelEl) {
-      labelEl.textContent = this.mode === 'focus' ? this.courseName : '5-Min Recovery Break';
+      labelEl.textContent = this.mode === 'focus' ? this.courseName : this.mode === 'long-break' ? 'Long recovery break' : 'Short recovery break';
     }
 
     if (statusTextEl) {
-      if (this.status === 'idle') statusTextEl.textContent = 'REACTOR READY';
-      else if (this.status === 'activating') statusTextEl.textContent = 'IGNITING CORE...';
-      else if (this.status === 'paused') statusTextEl.textContent = 'REACTOR PAUSED';
-      else if (this.status === 'complete') statusTextEl.textContent = 'SESSION COMPLETE!';
-      else if (this.mode === 'break') statusTextEl.textContent = 'RECOVERY MODE';
-      else if (this.remainingSeconds <= 60) statusTextEl.textContent = 'FINAL MINUTE';
-      else statusTextEl.textContent = 'DEEP FOCUS';
+      if (this.status === 'idle') statusTextEl.textContent = this.isBreakMode() ? 'Ready for a pause' : 'Ready when you are';
+      else if (this.status === 'activating') statusTextEl.textContent = 'Settling in';
+      else if (this.status === 'paused') statusTextEl.textContent = 'Paused';
+      else if (this.status === 'complete') statusTextEl.textContent = this.isBreakMode() ? 'Break complete' : 'Session complete';
+      else if (this.isBreakMode()) statusTextEl.textContent = 'Take a breather';
+      else statusTextEl.textContent = 'In focus';
     }
 
-    // Update SVG Circular Progress Ring
-    if (progressRing && this.totalDurationSeconds > 0) {
+    const progressBar = document.getElementById('reactorProgressBar');
+    const progressTrack = progressBar?.parentElement;
+    if (progressBar && this.totalDurationSeconds > 0) {
       const progressFraction = (this.totalDurationSeconds - this.remainingSeconds) / this.totalDurationSeconds;
-      const offset = this.RING_CIRCUMFERENCE * (1 - progressFraction);
-      progressRing.style.strokeDashoffset = Math.max(0, offset);
+      const percent = Math.max(0, Math.min(100, progressFraction * 100));
+      progressBar.style.width = `${percent}%`;
+      progressTrack?.setAttribute('aria-valuenow', String(Math.round(percent)));
     }
+    const stage = document.getElementById('reactorStage');
+    if (stage) stage.classList.toggle('state-recovery', this.isBreakMode());
+    const breakNote = document.getElementById('timerBreakNote');
+    if (breakNote) breakNote.hidden = !(this.status === 'complete' && !this.isBreakMode());
+    const breakSuggestion = document.getElementById('timerBreakSuggestion');
+    if (breakSuggestion && this.status === 'complete' && !this.isBreakMode()) {
+      const count = Storage.getUserItems(STORAGE_KEYS.SESSIONS).filter(session => session.status === 'completed' && session.dateStr === Utils.getLocalDateString()).length;
+      breakSuggestion.textContent = count >= 4 ? `${count} focus sessions completed today. A longer recovery break may feel right before your next block.` : 'Your focus session is complete. Take a moment to reset before your next study block.';
+    }
+    this.updateDailySummary();
 
     // Update Document Title
     const modePrefix = this.mode === 'focus' ? '⚡ Focus' : '☕ Break';
     document.title = this.status === 'running' 
       ? `(${Utils.formatTime(this.remainingSeconds)}) ${modePrefix} - FocusPulse`
-      : 'Focus Reactor - FocusPulse';
+      : 'Focus Timer · FocusPulse';
+  },
+
+  updateDailySummary() {
+    const user = Storage.getCurrentUser();
+    const sessions = Storage.getData(STORAGE_KEYS.SESSIONS, []).filter(session => session.userId === user?.id && session.status === 'completed' && session.dateStr === Utils.getLocalDateString());
+    const count = document.getElementById('stopwatchSessions');
+    if (count) count.textContent = sessions.length;
+    const progress = Goals.getTodayProgress();
+    const goal = document.getElementById('stopwatchGoal');
+    if (goal) goal.textContent = `${progress.completed} / ${progress.target}`;
   },
 
   updateModeLabels(prefs = this.getDurationPreferences()) {
     const focusBtn = document.getElementById('focusModeBtn');
     const breakBtn = document.getElementById('breakModeBtn');
-    if (focusBtn) focusBtn.textContent = `Pomodoro (${prefs.focusDuration || 25}m)`;
-    if (breakBtn) breakBtn.textContent = `Break (${prefs.breakDuration || 5}m)`;
+    const longBreakBtn = document.getElementById('longBreakModeBtn');
+    if (focusBtn) focusBtn.textContent = `Focus · ${prefs.focusDuration || 25} min`;
+    if (breakBtn) breakBtn.textContent = `Short break · ${prefs.breakDuration || 5} min`;
+    if (longBreakBtn) longBreakBtn.textContent = `Long break · ${prefs.longBreakDuration || 15} min`;
   },
 
   setAnimationState(stateName) {
@@ -340,24 +442,47 @@ const Timer = {
 
     if (!startBtn) return;
 
-    if (this.status === 'idle') {
+    if (this.status === 'activating') {
+      startBtn.style.display = 'none';
+      if (pauseBtn) pauseBtn.style.display = 'none';
+      if (resumeBtn) resumeBtn.style.display = 'none';
+      if (cancelBtn) cancelBtn.style.display = 'inline-flex';
+      if (skipBreakBtn) skipBreakBtn.style.display = 'none';
+      return;
+    }
+
+    if (this.status === 'idle' || this.status === 'complete') {
       startBtn.style.display = 'inline-flex';
+      const startLabel = startBtn.querySelector('span');
+      if (startLabel) startLabel.textContent = this.status === 'complete' && !this.isBreakMode() ? 'Start another focus session' : this.isBreakMode() ? 'Start break' : 'Start session';
       if (pauseBtn) pauseBtn.style.display = 'none';
       if (resumeBtn) resumeBtn.style.display = 'none';
       if (cancelBtn) cancelBtn.style.display = 'none';
       if (skipBreakBtn) skipBreakBtn.style.display = 'none';
+      const breakAction = document.getElementById('btnStartBreakFromComplete');
+      if (breakAction) breakAction.style.display = this.status === 'complete' && !this.isBreakMode() ? 'inline-flex' : 'none';
+      const longBreakAction = document.getElementById('btnStartLongBreakFromComplete');
+      if (longBreakAction) longBreakAction.style.display = this.status === 'complete' && !this.isBreakMode() ? 'inline-flex' : 'none';
+      const nextAction = document.getElementById('btnNextFocusSession');
+      if (nextAction) nextAction.style.display = this.status === 'complete' && !this.isBreakMode() ? 'inline-flex' : 'none';
     } else if (this.status === 'running') {
       startBtn.style.display = 'none';
       if (pauseBtn) pauseBtn.style.display = 'inline-flex';
       if (resumeBtn) resumeBtn.style.display = 'none';
-      if (cancelBtn) cancelBtn.style.display = this.mode === 'focus' ? 'inline-flex' : 'none';
-      if (skipBreakBtn) skipBreakBtn.style.display = this.mode === 'break' ? 'inline-flex' : 'none';
+      if (cancelBtn) cancelBtn.style.display = !this.isBreakMode() ? 'inline-flex' : 'none';
+      if (skipBreakBtn) skipBreakBtn.style.display = this.isBreakMode() ? 'inline-flex' : 'none';
+      document.getElementById('btnStartBreakFromComplete')?.style.setProperty('display','none');
+      document.getElementById('btnStartLongBreakFromComplete')?.style.setProperty('display','none');
+      document.getElementById('btnNextFocusSession')?.style.setProperty('display','none');
     } else if (this.status === 'paused') {
       startBtn.style.display = 'none';
       if (pauseBtn) pauseBtn.style.display = 'none';
       if (resumeBtn) resumeBtn.style.display = 'inline-flex';
-      if (cancelBtn) cancelBtn.style.display = this.mode === 'focus' ? 'inline-flex' : 'none';
-      if (skipBreakBtn) skipBreakBtn.style.display = this.mode === 'break' ? 'inline-flex' : 'none';
+      if (cancelBtn) cancelBtn.style.display = !this.isBreakMode() ? 'inline-flex' : 'none';
+      if (skipBreakBtn) skipBreakBtn.style.display = this.isBreakMode() ? 'inline-flex' : 'none';
+      document.getElementById('btnStartBreakFromComplete')?.style.setProperty('display','none');
+      document.getElementById('btnStartLongBreakFromComplete')?.style.setProperty('display','none');
+      document.getElementById('btnNextFocusSession')?.style.setProperty('display','none');
     }
   },
 
@@ -370,6 +495,8 @@ const Timer = {
       status: this.status,
       courseId: this.courseId,
       courseName: this.courseName,
+      objective: this.objective || '',
+      plannedSessionId: this.plannedSessionId || null,
       totalDurationSeconds: this.totalDurationSeconds,
       remainingSeconds: this.remainingSeconds,
       targetEndTime: this.targetEndTime,
@@ -388,6 +515,10 @@ const Timer = {
     this.mode = state.mode || 'focus';
     this.courseId = state.courseId;
     this.courseName = state.courseName || 'General Study';
+    this.objective = state.objective || '';
+    this.plannedSessionId = state.plannedSessionId || null;
+    const objectiveInput = document.getElementById('timerObjective');
+    if (objectiveInput) objectiveInput.value = this.objective;
     this.totalDurationSeconds = state.totalDurationSeconds || this.FOCUS_DEFAULT_SECONDS;
 
     if ((state.status === 'running' || state.status === 'activating') && state.targetEndTime) {
@@ -427,6 +558,12 @@ const Timer = {
   },
 
   bindEvents() {
+    document.addEventListener('keydown', event => {
+      const tag=event.target?.tagName?.toLowerCase();
+      if(event.altKey&&event.shiftKey&&event.key.toLowerCase()==='s'&&!['input','textarea','select'].includes(tag)){
+        event.preventDefault();if(this.status==='running')this.pause();else if(this.status==='paused')this.resume();else{const select=document.getElementById('reactorCourseSelect');if(this.isBreakMode())this.startBreak();else this.startFocus(select?.value||null,select?.selectedOptions[0]?.text||'Independent study')}
+      }
+    });
     window.addEventListener('beforeunload', () => {
       if (this.status === 'running' || this.status === 'paused' || this.status === 'activating') {
         this.persistTimerState();
@@ -435,6 +572,7 @@ const Timer = {
 
     document.getElementById('btnDecreaseDuration')?.addEventListener('click', () => this.adjustDuration(-5));
     document.getElementById('btnIncreaseDuration')?.addEventListener('click', () => this.adjustDuration(5));
+    document.getElementById('btnResetTimer')?.addEventListener('click', () => this.resetTimer());
 
     // Start Focus
     const startBtn = document.getElementById('btnStartReactor');
@@ -443,26 +581,31 @@ const Timer = {
         const select = document.getElementById('reactorCourseSelect');
         const courseId = select ? select.value : null;
         const courseName = select && select.selectedOptions[0] ? select.selectedOptions[0].text : 'General Study';
-        if (this.mode === 'break') this.startBreak();
+        if (this.isBreakMode()) this.startBreak();
         else this.startFocus(courseId, courseName);
       });
     }
 
     document.querySelectorAll('.reactor-mode-btn').forEach(button => {
       button.addEventListener('click', () => {
-        if (this.status !== 'idle') {
+        if (!['idle', 'complete'].includes(this.status)) {
           Utils.showToast('Finish the current session before switching timer modes.', 'warning');
           return;
         }
-        this.mode = button.dataset.mode === 'break' ? 'break' : 'focus';
+        this.mode = ['break','long-break'].includes(button.dataset.mode) ? button.dataset.mode : 'focus';
         document.querySelectorAll('.reactor-mode-btn').forEach(btn => btn.classList.toggle('active', btn === button));
         const prefs = this.getDurationPreferences();
-        const duration = this.mode === 'break' ? (prefs.breakDuration || 5) : (prefs.focusDuration || 25);
+        const duration = this.mode === 'long-break' ? (prefs.longBreakDuration || 15) : this.mode === 'break' ? (prefs.breakDuration || 5) : (prefs.focusDuration || 25);
         this.totalDurationSeconds = duration * 60;
         this.remainingSeconds = this.totalDurationSeconds;
         this.updateModeLabels(prefs);
         this.updateDisplay();
       });
+    });
+
+    document.getElementById('timerObjective')?.addEventListener('input', event => {
+      this.objective = event.target.value.slice(0,120);
+      if (this.status === 'running' || this.status === 'paused') this.persistTimerState();
     });
 
     // Pause
@@ -484,6 +627,13 @@ const Timer = {
     const skipBreakBtn = document.getElementById('btnSkipBreak');
     if (skipBreakBtn) skipBreakBtn.addEventListener('click', () => this.skipBreak());
 
+    document.getElementById('btnStartBreakFromComplete')?.addEventListener('click', () => { this.mode = 'break'; this.startBreak(); });
+    document.getElementById('btnStartLongBreakFromComplete')?.addEventListener('click', () => { this.mode = 'long-break'; this.startBreak(); });
+    document.getElementById('btnNextFocusSession')?.addEventListener('click', () => {
+      const select = document.getElementById('reactorCourseSelect');
+      this.startFocus(select?.value || null, select?.selectedOptions[0]?.text || 'Independent study');
+    });
+
     // Deep Focus Toggle
     const deepFocusBtn = document.getElementById('btnToggleDeepFocus');
     if (deepFocusBtn) deepFocusBtn.addEventListener('click', () => this.toggleDeepFocus());
@@ -496,7 +646,9 @@ const Timer = {
     if (soundBtn) {
       soundBtn.addEventListener('click', () => {
         this.soundEnabled = !this.soundEnabled;
+        const prefs = Storage.getData(STORAGE_KEYS.PREFERENCES, {}); prefs.soundEnabled = this.soundEnabled; Storage.saveData(STORAGE_KEYS.PREFERENCES, prefs);
         soundBtn.classList.toggle('active', this.soundEnabled);
+        soundBtn.textContent = this.soundEnabled ? 'Completion chime on' : 'Sounds off';
         Utils.showToast(this.soundEnabled ? 'Reactor Sound Effects Enabled' : 'Reactor Muted', 'info');
       });
     }

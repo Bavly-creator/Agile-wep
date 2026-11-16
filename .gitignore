@@ -1,6 +1,8 @@
 .env
 node_modules/
 uploads/
+data/focuspulse-auth.json
+data/*.tmp
 .DS_Store
 
 # Local-only project materials
