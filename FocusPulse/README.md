@@ -1,40 +1,56 @@
 # FocusPulse
 
-FocusPulse is a student-first academic workspace for courses, assignments, study planning, focus sessions, notes, and progress. The frontend uses HTML, CSS, and vanilla JavaScript. Pulse AI remains a separate optional tool.
+FocusPulse is a student-first workspace for managing courses, assignments, study plans, focus sessions, notes, and academic progress. The frontend uses HTML, CSS, and vanilla JavaScript. Pulse AI is an optional tool.
 
-## Run the application
+**Live frontend:** [https://bavly-creator.github.io/Agile-wep/](https://bavly-creator.github.io/Agile-wep/)
 
-Guest mode works locally without an account service:
+> GitHub Pages serves the static frontend only. Account and AI features need the Node.js server and its external services deployed separately; they are not provided by the Pages site itself.
 
-1. Open `FocusPulse/index.html` with a local static server such as VS Code Live Server.
-2. Choose **Continue as Guest**. Guest data remains on this browser and does not sync.
+## Features
 
-Account creation, sign-in, verification, and password recovery require the Node server:
+- Dashboard with schedule, tasks, deadlines, course overview, study activity, and meaningful empty states.
+- Course creation and management, course details, task editing and completion, and a daily, weekly, and monthly planner.
+- Availability-based study suggestions using open tasks, deadlines, and exam topics. Suggested sessions can be reviewed and edited before study; replacing suggestions requires confirmation.
+- Editorial digital focus timer with course and objective association, short and long breaks, reset, session history, timestamp-based countdown, and refresh recovery.
+- Notes with search, course organization, tags, pinning, and a study journal that can link to courses and completed sessions.
+- Progress, achievements, study groups, sound preferences, and a local data export.
+- Forest, Sage, and Cream light and dark themes, responsive layouts, gentle background motion, and reduced-motion support.
+- Optional Pulse AI using the existing Gemini server integration.
 
-1. From the repository root, install the existing dependencies with `npm install`.
-2. Copy the account settings from `.env.example` into `.env` and configure the values below.
+## Run locally
+
+### Guest workspace
+
+1. Serve the `FocusPulse` folder using a local static server, such as the VS Code Live Server extension.
+2. Open `index.html` from that server and choose **Continue as Guest**.
+
+Guest academic data is stored in this browser only. It does not sync automatically and may be lost if browser data is cleared.
+
+### Account and AI services
+
+1. Install the existing Node dependencies from the repository root with `npm install`.
+2. Copy `.env.example` to `.env` and set the server values described below. Keep `.env` private and out of version control.
 3. Set `APP_BASE_URL=http://localhost:3000` for local development.
-4. Set `RESEND_API_KEY` and `EMAIL_FROM` to a Resend API key and a verified sender address.
-5. Run `npm start` and open `http://localhost:3000`.
+4. For account registration and password recovery, set `RESEND_API_KEY` and `EMAIL_FROM` to a Resend API key and verified sender.
+5. For Pulse AI, set `GEMINI_API_KEY` (and optionally `GEMINI_MODEL`).
+6. Run `npm start` from the repository root and open `http://localhost:3000`.
 
-Without Resend configuration, registration and recovery return a clear configuration error; they do not simulate email delivery or mark addresses verified.
+Without the Resend configuration, the server reports that email delivery is unavailable. It does not pretend to send verification or password recovery email. Without `GEMINI_API_KEY`, AI requests return a service error rather than simulated answers.
 
-## Account service status
+## Account service and data
 
-The Express server stores account records in a local JSON development store at `data/focuspulse-auth.json` (ignored by Git). Passwords use Node's scrypt hash; verification and password-reset tokens are stored as hashes and expire after 30 minutes. Login sessions use HttpOnly, SameSite cookies, CSRF checks for logout, and in-memory session state. Restarting the server revokes active sessions.
+The Express account service currently stores account records in `data/focuspulse-auth.json`, which is ignored by Git. Passwords use Node’s scrypt hashing. Verification and reset tokens are stored as hashes and expire after 30 minutes. Sessions use HttpOnly, SameSite cookies and in-memory session state; restarting the server revokes sessions.
 
-This is a single-instance development setup, not a production database or multi-server session store. Before production use, connect a managed database and shared session store, configure HTTPS and a verified mail domain, and review operational backups, monitoring, and deployment security.
+This is a single-instance development implementation, not a production database or shared session store. Production deployment needs a managed database, shared session storage, HTTPS, a verified email domain, backups, monitoring, and a security review.
 
-Academic feature data is still stored locally in browser localStorage, including for a signed-in account. Guest-to-account sign-in keeps the existing workspace on the same device; the application does not currently synchronize academic records to the server. Clearing browser data can remove those records.
+Academic records remain in browser `localStorage`, including for registered users. Guest-to-account sign-in preserves local records on the same device, but the application does not sync academic data to the account server. Study groups are also local records and do not support cross-device collaboration.
 
-## Existing data
+Existing local records are retained. A new workspace starts without fabricated student activity so progress and statistics reflect actual use.
 
-Existing localStorage records are retained. New installations start with empty courses and activity so dashboards and statistics reflect real student actions instead of sample sessions. The former demo account and plaintext browser password are no longer used.
+## Pulse AI and document support
 
-The welcome, sign-in, registration, verification, and recovery screens share the split-screen FocusPulse brand layout. The planner stores weekly study availability, timed commitments, exam topics, and confidence levels locally. Its deterministic plan suggestions use open tasks, exam topics, deadlines, and saved time windows; suggestions are added as separate calendar entries, and replacing previous suggestions requires confirmation. Study groups are currently local records and do not support cross-device collaboration. Study journals are saved in the local notebook and can link to a course and a completed focus session.
+Pulse AI calls the existing Gemini integration from the server. Keep provider credentials in server environment variables, never in frontend code. Current document extraction supports TXT, Markdown, JSON, and CSV. PDF, DOCX, PPTX, and image extraction are not configured and are reported as unsupported. Uploaded text is held in server memory and is cleared when the server restarts.
 
-## Optional AI service
+## Deployment
 
-Pulse AI uses the existing Gemini server integration. Set `GEMINI_API_KEY` on the server; never add provider credentials to frontend JavaScript. Upload and generation require a configured AI provider. Current document extraction supports TXT, Markdown, JSON, and CSV only. PDF, DOCX, PPTX, and image extraction need a document-processing service before those formats can be enabled. Uploaded source files are removed after text extraction; extracted text is held in server memory and is cleared when the server restarts.
-
-Email verification and password recovery require a Resend account, a verified sender, and the `RESEND_API_KEY`, `EMAIL_FROM`, and `APP_BASE_URL` values. These flows are not considered live until delivery is verified with the configured provider.
+The repository’s GitHub Pages workflow publishes the static frontend. GitHub Pages cannot run this project’s Node APIs. To enable registration, email verification, password recovery, or Pulse AI on a public deployment, deploy the Node server separately and configure its URL, environment variables, HTTPS, and appropriate frontend API routing.
