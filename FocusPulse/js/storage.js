@@ -14,7 +14,10 @@ const STORAGE_KEYS = {
   BADGES: 'focuspulse_badges',
   DISTRACTIONS: 'focuspulse_distractions',
   ACTIVE_TIMER: 'focuspulse_active_timer',
-  PREFERENCES: 'focuspulse_preferences'
+  PREFERENCES: 'focuspulse_preferences',
+  TASKS: 'focuspulse_tasks',
+  PLANNER_EVENTS: 'focuspulse_planner_events',
+  NOTES: 'focuspulse_notes'
 };
 
 const Storage = {
@@ -47,6 +50,23 @@ const Storage = {
       console.error(`[Storage] Error removing ${key}:`, e);
       return false;
     }
+  },
+
+  getCurrentUserId() {
+    return this.getCurrentUser()?.id || 'usr_demo_01';
+  },
+
+  getUserItems(key) {
+    const userId = this.getCurrentUserId();
+    const data = this.getData(key, []);
+    return Array.isArray(data) ? data.filter(item => !item.userId || item.userId === userId) : [];
+  },
+
+  saveUserItems(key, items) {
+    const userId = this.getCurrentUserId();
+    const all = this.getData(key, []);
+    const otherUsers = Array.isArray(all) ? all.filter(item => item.userId && item.userId !== userId) : [];
+    return this.saveData(key, [...otherUsers, ...items.map(item => ({ ...item, userId }))]);
   },
 
   // Current session management
@@ -256,6 +276,11 @@ const Storage = {
       };
       this.saveData(STORAGE_KEYS.PREFERENCES, prefs);
     }
+
+    // Empty, version-safe collections for the academic workspace modules.
+    [STORAGE_KEYS.TASKS, STORAGE_KEYS.PLANNER_EVENTS, STORAGE_KEYS.NOTES].forEach(key => {
+      if (!Array.isArray(this.getData(key, null))) this.saveData(key, []);
+    });
   }
 };
 
